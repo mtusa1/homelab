@@ -1,0 +1,26 @@
+- Media:
+    - Immich:
+        href: http://192.168.5.134:2283
+        description: Photo backup
+    - Kavita:
+        href: http://192.168.5.134:5000
+        description: Comics and books
+
+- Infrastructure:
+    - Portainer:
+        href: https://192.168.5.134:9443
+        description: Docker management
+    - Homelab GitHub:
+        href: https://github.com/mtusa1/homelab
+        description: Infrastructure repo
+
+- Storage:
+    - Data Share:
+        href: file://///192.168.5.134/Data
+        description: App data and downloads
+    - Media Share:
+        href: file://///192.168.5.134/Media
+        description: Media library
+    - Storage Share:
+        href: file://///192.168.5.134/Storage
+        description: Projects and archives
