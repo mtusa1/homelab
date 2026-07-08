@@ -1,0 +1,20 @@
+title: Matt's Homelab
+description: Personal server dashboard
+theme: dark
+color: slate
+headerStyle: clean
+hideVersion: true
+statusStyle: dot
+useEqualHeights: true
+fiveColumns: false
+
+layout:
+  Media:
+    style: row
+    columns: 2
+  Infrastructure:
+    style: row
+    columns: 2
+  Storage:
+    style: row
+    columns: 3
