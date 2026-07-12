@@ -1,26 +1,148 @@
 - Media:
     - Immich:
+        icon: immich.png
         href: http://192.168.5.134:2283
-        description: Photo backup
+        description: Photos and mobile backup
+        siteMonitor: http://192.168.5.134:2283
+        server: local-docker
+        container: immich_server
+        widget:
+          type: immich
+          url: http://192.168.5.134:2283
+          key: "{{HOMEPAGE_VAR_IMMICH_KEY}}"
+          version: 2
+          fields:
+            - users
+            - photos
+            - videos
+            - storage
+
+    - Jellyfin:
+        icon: jellyfin.png
+        href: http://192.168.5.134:8096
+        description: Movies, television, and music
+        siteMonitor: http://192.168.5.134:8096
+        server: local-docker
+        container: jellyfin
+        widget:
+          type: jellyfin
+          url: http://192.168.5.134:8096
+          key: "{{HOMEPAGE_VAR_JELLYFIN_KEY}}"
+          enableBlocks: true
+          enableNowPlaying: true
+          showEpisodeNumber: true
+
     - Kavita:
+        icon: kavita.png
         href: http://192.168.5.134:5000
-        description: Comics and books
+        description: Books, comics, and magazines
+        siteMonitor: http://192.168.5.134:5000
+        server: local-docker
+        container: kavita
+        widget:
+          type: kavita
+          url: http://192.168.5.134:5000
+          username: "{{HOMEPAGE_VAR_KAVITA_USERNAME}}"
+          password: "{{HOMEPAGE_VAR_KAVITA_PASSWORD}}"
+          fields:
+            - seriesCount
+            - totalFiles
 
 - Infrastructure:
     - Portainer:
+        icon: portainer.png
         href: https://192.168.5.134:9443
         description: Docker management
-    - Homelab GitHub:
-        href: https://github.com/mtusa1/homelab
-        description: Infrastructure repo
+        server: local-docker
+        container: portainer
+
+    - Homepage:
+        icon: homepage.png
+        href: http://192.168.5.134:3000
+        description: Homeland command center
+        server: local-docker
+        container: homepage
+
+    - Tailscale:
+        icon: tailscale.png
+        href: https://login.tailscale.com/admin/machines
+        description: Secure remote network
+
+- Monitoring:
+    - Uptime Kuma:
+        icon: uptime-kuma.png
+        href: http://192.168.5.134:3001
+        description: Service availability and alerts
+        server: local-docker
+        container: uptime-kuma
 
 - Storage:
-    - Data Share:
-        href: file://///192.168.5.134/Data
-        description: App data and downloads
-    - Media Share:
-        href: file://///192.168.5.134/Media
-        description: Media library
-    - Storage Share:
-        href: file://///192.168.5.134/Storage
-        description: Projects and archives
+    - Data:
+        icon: mdi-harddisk
+        description: Docker, photos, downloads, and ROMs
+
+    - Media:
+        icon: mdi-movie-open
+        description: Movies, television, books, and music
+
+    - Storage:
+        icon: mdi-archive
+        description: Projects, archives, and backups
+
+- Network:
+    - Samba:
+        icon: mdi-folder-network
+        description: Data, Media, and Storage shares
+
+    - Tailscale Admin:
+        icon: tailscale.png
+        href: https://login.tailscale.com/admin/machines
+        description: Devices and network status
+
+    - Router:
+        icon: mdi-router-wireless
+        description: Eero network administration
+
+- Gaming:
+    - Steam:
+        icon: steam.png
+        href: https://store.steampowered.com
+        description: PC gaming
+
+    - RetroAchievements:
+        icon: retroarch.png
+        href: https://retroachievements.org
+        description: Retro game achievements
+
+    - Moonlight:
+        icon: mdi-moon-waning-crescent
+        description: Remote game streaming
+
+- AI Lab:
+    - ComfyUI:
+        icon: mdi-image-auto-adjust
+        description: Image generation workstation
+
+    - Ollama:
+        icon: ollama.png
+        description: Future local language models
+
+    - Open WebUI:
+        icon: open-webui.png
+        description: Future local AI interface
+
+- Development:
+    - Homelab Repository:
+        icon: github.png
+        href: https://github.com/mtusa1/homelab
+        description: Infrastructure source of truth
+
+    - Arena Aeternum:
+        icon: github.png
+        href: https://github.com/mtusa1/ArenaAeternum
+        description: Game development repository
+
+    - GitHub:
+        icon: github.png
+        href: https://github.com/mtusa1
+        description: Project repositories

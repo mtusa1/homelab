@@ -1,20 +1,57 @@
-title: Matt's Homelab
-description: Personal server dashboard
+title: Homeland
+description: Matt's self-hosted command center
+
 theme: dark
 color: slate
 headerStyle: clean
 hideVersion: true
 statusStyle: dot
 useEqualHeights: true
-fiveColumns: false
+target: _blank
+
+quicklaunch:
+  searchDescriptions: true
+  hideInternetSearch: false
+  showSearchSuggestions: true
+  provider: google
 
 layout:
   Media:
+    icon: mdi-multimedia
     style: row
-    columns: 2
+    columns: 3
+
   Infrastructure:
+    icon: mdi-server-network
     style: row
-    columns: 2
+    columns: 3
+
+  Monitoring:
+    icon: mdi-chart-line
+    style: row
+    columns: 3
+
   Storage:
+    icon: mdi-harddisk
+    style: row
+    columns: 3
+
+  Network:
+    icon: mdi-lan
+    style: row
+    columns: 3
+
+  Gaming:
+    icon: mdi-controller
+    style: row
+    columns: 3
+
+  AI Lab:
+    icon: mdi-robot
+    style: row
+    columns: 3
+
+  Development:
+    icon: mdi-code-braces
     style: row
     columns: 3

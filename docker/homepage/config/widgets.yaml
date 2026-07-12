@@ -1,0 +1,29 @@
+- resources:
+    label: NUC
+    cpu: true
+    memory: true
+    cputemp: true
+    uptime: true
+    network: true
+    units: imperial
+    refresh: 5000
+
+- resources:
+    label: Storage
+    expanded: true
+    disk:
+      - /host-data
+      - /host-media
+      - /host-storage
+
+- datetime:
+    text_size: xl
+    format:
+      dateStyle: long
+      timeStyle: short
+      hourCycle: h12
+
+- search:
+    provider: google
+    target: _blank
+    showSearchSuggestions: true
