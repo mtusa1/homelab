@@ -1,0 +1,18 @@
+services:
+  kavita:
+    image: jvmilazz0/kavita:latest
+
+    container_name: kavita
+
+    ports:
+      - "5000:5000"
+
+    volumes:
+      - /media/tusa/Data/Docker/Kavita/config:/kavita/config
+      - /media/tusa/Data/Comics:/comics
+      - /media/tusa/Media/Comics:/comics-media
+      - /media/tusa/Media/Books:/books
+      - /media/tusa/Media/RPG Books:/rpgbooks
+      - /media/tusa/Media/The Trove:/thetrove
+
+    restart: unless-stopped
