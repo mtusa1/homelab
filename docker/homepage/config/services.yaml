@@ -1,7 +1,73 @@
+- Network Map:
+    - Ubuntu NUC:
+        icon: mdi-server
+        href: http://192.168.5.134:3000
+        target: _blank
+        description: Primary homelab server
+        ping: 192.168.5.134
+
+    - Main Desktop:
+        icon: mdi-desktop-tower-monitor
+        description: Main Windows workstation
+        ping: 100.104.191.19
+
+    - OptiPlex:
+        icon: mdi-server-network
+        description: Future Proxmox and Docker host
+
+    - Lenovo Idea Tab:
+        icon: mdi-tablet
+        description: Mobile dashboard and media client
+        ping: 100.118.124.0
+
+    - Grey Surface:
+        icon: mdi-laptop
+        description: Windows Surface
+        ping: 100.109.226.13
+
+    - Synology:
+        icon: synology.png
+        description: Synology NAS
+        ping: 100.84.242.37
+
+    - Asustor:
+        icon: asustor.png
+        description: Asustor NAS
+        ping: 100.121.84.99
+
+    - Eero Router:
+        icon: mdi-router-wireless
+        description: Home gateway and Wi-Fi mesh
+        ping: 192.168.4.1
+
+    - Internet:
+        icon: mdi-cloud-check
+        description: External network connectivity
+        ping: 1.1.1.1
+
+- Status:
+    - Homelab Health:
+        icon: mdi-heart-pulse
+        href: http://192.168.5.134:3001
+        description: Overall system health
+
+    - Docker:
+        icon: docker
+        href: http://192.168.5.134:9000
+
+    - Backup Status:
+        icon: mdi-backup-restore
+        href: file:///home/tusa/Homelab
+
+    - Updates:
+        icon: mdi-package-up
+        href: http://192.168.5.134:3000
+
 - Media:
     - Immich:
         icon: immich.png
         href: http://192.168.5.134:2283
+        target: _blank
         description: Photos and mobile backup
         siteMonitor: http://192.168.5.134:2283
         server: local-docker
@@ -20,6 +86,7 @@
     - Jellyfin:
         icon: jellyfin.png
         href: http://192.168.5.134:8096
+        target: _blank
         description: Movies, television, and music
         siteMonitor: http://192.168.5.134:8096
         server: local-docker
@@ -31,10 +98,16 @@
           enableBlocks: true
           enableNowPlaying: true
           showEpisodeNumber: true
+          fields:
+            - movies
+            - series
+            - episodes
+            - songs
 
     - Kavita:
         icon: kavita.png
         href: http://192.168.5.134:5000
+        target: _blank
         description: Books, comics, and magazines
         siteMonitor: http://192.168.5.134:5000
         server: local-docker
@@ -52,6 +125,7 @@
     - Portainer:
         icon: portainer.png
         href: https://192.168.5.134:9443
+        target: _blank
         description: Docker management
         server: local-docker
         container: portainer
@@ -59,90 +133,143 @@
     - Homepage:
         icon: homepage.png
         href: http://192.168.5.134:3000
+        target: _self
         description: Homeland command center
+        siteMonitor: http://192.168.5.134:3000
         server: local-docker
         container: homepage
 
-    - Tailscale:
+    - Tailscale Admin:
         icon: tailscale.png
         href: https://login.tailscale.com/admin/machines
-        description: Secure remote network
+        target: _blank
+        description: Remote devices and network access
 
 - Monitoring:
     - Uptime Kuma:
         icon: uptime-kuma.png
         href: http://192.168.5.134:3001
-        description: Service availability and alerts
+        target: _blank
+        description: Availability and service alerts
+        siteMonitor: http://192.168.5.134:3001
         server: local-docker
         container: uptime-kuma
+
+    - Grafana:
+        icon: grafana.png
+        href: http://192.168.5.134:3002
+        target: _blank
+        description: Historical system and container metrics
+        siteMonitor: http://192.168.5.134:3002
+        server: local-docker
+        container: grafana
+
+    - Prometheus:
+        icon: prometheus.png
+        href: http://192.168.5.134:9090
+        target: _blank
+        description: Metrics collection and storage
+        siteMonitor: http://192.168.5.134:9090/-/healthy
+        server: local-docker
+        container: prometheus
+
+    - Prometheus Targets:
+        icon: prometheus.png
+        href: http://192.168.5.134:9090/targets
+        target: _blank
+        description: Scrape-target health and errors
+
+    - cAdvisor:
+        icon: cadvisor.png
+        href: http://192.168.5.134:8080/containers/
+        target: _blank
+        description: Per-container resource monitoring
+        siteMonitor: http://192.168.5.134:8080/healthz
+        server: local-docker
+        container: cadvisor
+
+    - Node Exporter:
+        icon: prometheus.png
+        href: http://192.168.5.134:9100/metrics
+        target: _blank
+        description: NUC host metrics
+        siteMonitor: http://192.168.5.134:9100/metrics
+        server: local-docker
+        container: node-exporter
+
+- Operations:
+    - Nightly Backup:
+        icon: mdi-backup-restore
+        description: Docker and homelab recovery backup
+        widget:
+          type: customapi
+          url: http://192.168.5.134:8090/status.json
+          refreshInterval: 60000
+          mappings:
+            - field: status
+              label: Status
+              format: text
+            - field: completed
+              label: Completed
+              format: text
+            - field: duration
+              label: Duration
+              format: text
+            - field: size
+              label: Size
+              format: text
+
+    - Homelab Repository:
+        icon: github.png
+        href: https://github.com/mtusa1/homelab
+        target: _blank
+        description: Infrastructure source of truth
+
+    - Server Documentation:
+        icon: mdi-file-document-multiple
+        href: https://github.com/mtusa1/homelab
+        target: _blank
+        description: Runbooks, storage, network, and recovery notes
 
 - Storage:
     - Data:
         icon: mdi-harddisk
-        description: Docker, photos, downloads, and ROMs
+        description: Docker, photos, downloads, comics, and ROMs
 
     - Media:
         icon: mdi-movie-open
-        description: Movies, television, books, and music
+        description: Movies, television, books, cartoons, and music
 
     - Storage:
         icon: mdi-archive
-        description: Projects, archives, and backups
+        description: Archives and nightly backups
 
 - Network:
     - Samba:
         icon: mdi-folder-network
-        description: Data, Media, and Storage shares
+        description: Data, Media, and Storage network shares
 
-    - Tailscale Admin:
+    - Tailscale:
         icon: tailscale.png
         href: https://login.tailscale.com/admin/machines
-        description: Devices and network status
+        target: _blank
+        description: Secure remote network
 
-    - Router:
+    - Eero:
         icon: mdi-router-wireless
-        description: Eero network administration
-
-- Gaming:
-    - Steam:
-        icon: steam.png
-        href: https://store.steampowered.com
-        description: PC gaming
-
-    - RetroAchievements:
-        icon: retroarch.png
-        href: https://retroachievements.org
-        description: Retro game achievements
-
-    - Moonlight:
-        icon: mdi-moon-waning-crescent
-        description: Remote game streaming
-
-- AI Lab:
-    - ComfyUI:
-        icon: mdi-image-auto-adjust
-        description: Image generation workstation
-
-    - Ollama:
-        icon: ollama.png
-        description: Future local language models
-
-    - Open WebUI:
-        icon: open-webui.png
-        description: Future local AI interface
+        href: https://account.eero.com
+        target: _blank
+        description: Home network administration
 
 - Development:
-    - Homelab Repository:
-        icon: github.png
-        href: https://github.com/mtusa1/homelab
-        description: Infrastructure source of truth
-
-    - Arena Aeternum:
-        icon: github.png
-        href: https://github.com/mtusa1/ArenaAeternum
-        description: Game development repository
-
     - GitHub:
         icon: github.png
         href: https://github.com/mtusa1
+        target: _blank
         description: Project repositories
+
+    - Homelab:
+        icon: github.png
+        href: https://github.com/mtusa1/homelab
+        target: _blank
+        description: Infrastructure repository

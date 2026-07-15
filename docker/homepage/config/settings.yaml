@@ -21,6 +21,11 @@ layout:
     style: row
     columns: 3
 
+  Network Map:
+    icon: mdi-lan-connect
+    style: row
+    columns: 3
+
   Infrastructure:
     icon: mdi-server-network
     style: row
@@ -31,6 +36,11 @@ layout:
     style: row
     columns: 3
 
+  Operations:
+    icon: mdi-tools
+    style: row
+    columns: 3
+
   Storage:
     icon: mdi-harddisk
     style: row
@@ -38,16 +48,6 @@ layout:
 
   Network:
     icon: mdi-lan
-    style: row
-    columns: 3
-
-  Gaming:
-    icon: mdi-controller
-    style: row
-    columns: 3
-
-  AI Lab:
-    icon: mdi-robot
     style: row
     columns: 3
 
