@@ -1,0 +1,468 @@
+{% extends "base.html" %}
+
+{% block title %}Homeland{% endblock %}
+
+{% block content %}
+
+<section class="page-heading dashboard-hero">
+    <div>
+        <p class="eyebrow">Infrastructure overview</p>
+        <h1>Homeland</h1>
+
+        <p class="page-description">
+            Live status for your servers, storage, computers,
+            and container infrastructure.
+        </p>
+    </div>
+
+    <div class="last-updated">
+        Last updated
+        <strong id="last-updated">Loading…</strong>
+    </div>
+</section>
+
+
+<!-- HOMELAND GLOBAL OVERVIEW -->
+<section class="global-overview" aria-labelledby="global-overview-title">
+    <div class="overview-heading">
+        <div>
+            <p class="eyebrow">Command center</p>
+            <h2 id="global-overview-title">Global Overview</h2>
+        </div>
+
+        <div id="overview-health" class="overview-health loading">
+            <span class="overview-health-dot"></span>
+
+            <div>
+                <span>Overall health</span>
+                <strong id="overview-health-text">Checking…</strong>
+            </div>
+        </div>
+    </div>
+
+    <div class="overview-stat-grid">
+        <article class="overview-stat">
+            <span class="overview-stat-label">Devices</span>
+            <strong id="overview-devices" class="overview-stat-value">
+                — / — online
+            </strong>
+            <span
+                id="overview-devices-caption"
+                class="overview-stat-caption"
+            >
+                Checking monitored systems
+            </span>
+        </article>
+
+        <article class="overview-stat">
+            <span class="overview-stat-label">Docker</span>
+            <strong id="overview-docker" class="overview-stat-value">
+                —
+            </strong>
+            <span
+                id="overview-docker-caption"
+                class="overview-stat-caption"
+            >
+                Ubuntu NUC
+            </span>
+        </article>
+
+        <article class="overview-stat">
+            <span class="overview-stat-label">
+                Monitored storage
+            </span>
+            <strong id="overview-storage" class="overview-stat-value">
+                —
+            </strong>
+            <span
+                id="overview-storage-caption"
+                class="overview-stat-caption"
+            >
+                Discovering volumes
+            </span>
+        </article>
+
+        <article class="overview-stat">
+            <span class="overview-stat-label">Average CPU</span>
+            <strong id="overview-cpu" class="overview-stat-value">
+                —
+            </strong>
+
+            <div class="progress-track overview-progress">
+                <div
+                    id="overview-cpu-bar"
+                    class="progress-bar"
+                    style="width: 0%"
+                ></div>
+            </div>
+
+            <span
+                id="overview-cpu-caption"
+                class="overview-stat-caption"
+            >
+                Across online computers
+            </span>
+        </article>
+    </div>
+
+    <div class="overview-alerts">
+        <div class="overview-alerts-heading">
+            <div>
+                <span class="overview-stat-label">Alerts</span>
+                <strong id="overview-alert-count">Checking…</strong>
+            </div>
+
+            <span
+                id="overview-refresh-status"
+                class="overview-refresh-status"
+            >
+                Loading live metrics
+            </span>
+        </div>
+
+        <div
+            id="overview-alert-list"
+            class="overview-alert-list"
+            aria-live="polite"
+        >
+            <div class="overview-alert neutral">
+                Gathering device health information…
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<section class="device-grid">
+
+    <!-- Synology -->
+    <article
+        class="device-card"
+        id="synology-card"
+        data-endpoint="/api/device/synology"
+    >
+        <div class="card-header">
+            <div>
+                <p class="device-type">Network storage</p>
+                <h2>Synology DS925+</h2>
+            </div>
+
+            <span
+                id="synology-status"
+                class="status-pill loading"
+            >
+                Loading
+            </span>
+        </div>
+
+        <div class="storage-visual">
+            <div class="storage-heading">
+                <span>Volume 1</span>
+                <strong id="synology-storage-percent">—</strong>
+            </div>
+
+            <div class="progress-track">
+                <div
+                    id="synology-storage-bar"
+                    class="progress-bar"
+                    style="width: 0%"
+                ></div>
+            </div>
+
+            <div class="storage-caption">
+                <span id="synology-storage-used">— used</span>
+                <span id="synology-storage-free">— free</span>
+            </div>
+        </div>
+
+        <div class="metric-grid">
+            <div class="metric">
+                <span>System temperature</span>
+                <strong id="synology-temperature">—</strong>
+            </div>
+
+            <div class="metric">
+                <span>Warmest drive</span>
+                <strong id="synology-disk-temperature">—</strong>
+            </div>
+
+            <div class="metric">
+                <span>RAID</span>
+                <strong id="synology-raid">—</strong>
+            </div>
+
+            <div class="metric">
+                <span>Uptime</span>
+                <strong id="synology-uptime">—</strong>
+            </div>
+        </div>
+
+        <div class="card-footer">
+            <span id="synology-drive-count">— drives detected</span>
+
+            <a
+                class="details-button"
+                href="/device/synology"
+            >
+                View details
+            </a>
+        </div>
+    </article>
+
+    <!-- Ubuntu NUC -->
+    <article
+        class="device-card"
+        id="nuc-card"
+        data-endpoint="/nuc"
+    >
+        <div class="card-header">
+            <div>
+                <p class="device-type">Compute server</p>
+                <h2>Ubuntu NUC</h2>
+            </div>
+
+            <span
+                id="nuc-status"
+                class="status-pill loading"
+            >
+                Loading
+            </span>
+        </div>
+
+        <div class="metric-grid">
+            <div class="metric">
+                <span>CPU usage</span>
+                <strong id="nuc-cpu">—</strong>
+            </div>
+
+            <div class="metric">
+                <span>Memory</span>
+                <strong id="nuc-memory">—</strong>
+            </div>
+
+            <div class="metric">
+                <span>Containers</span>
+                <strong id="nuc-containers">—</strong>
+            </div>
+
+            <div class="metric">
+                <span>Uptime</span>
+                <strong id="nuc-uptime">—</strong>
+            </div>
+        </div>
+
+        <div class="card-footer">
+            <span>Docker host</span>
+
+            <a
+                class="details-button"
+                href="/device/nuc"
+            >
+                View details
+            </a>
+        </div>
+    </article>
+
+    <!-- Main Desktop -->
+    <article
+        class="device-card"
+        id="windows-main-card"
+        data-device-id="main-desktop"
+    >
+        <div class="card-header">
+            <div>
+                <p class="device-type">Windows workstation</p>
+                <h2>Main Desktop</h2>
+            </div>
+
+            <span
+                id="windows-main-status"
+                class="status-pill loading"
+            >
+                Loading
+            </span>
+        </div>
+
+        <div class="metric-grid">
+            <div
+                class="metric"
+                id="windows-main-cpu-metric"
+            >
+                <span>CPU usage</span>
+                <strong id="windows-main-cpu">—</strong>
+            </div>
+
+            <div
+                class="metric"
+                id="windows-main-memory-metric"
+            >
+                <span>Memory</span>
+                <strong id="windows-main-memory">—</strong>
+            </div>
+
+            <div class="metric">
+                <span>Storage</span>
+                <strong id="windows-main-storage">—</strong>
+            </div>
+
+            <div class="metric">
+                <span>Uptime</span>
+                <strong id="windows-main-uptime">—</strong>
+            </div>
+        </div>
+
+        <div class="card-footer">
+            <span id="windows-main-drivecount">
+                Waiting for drive data
+            </span>
+
+            <a
+                class="details-button"
+                href="/device/windows/main-desktop"
+            >
+                View details
+            </a>
+        </div>
+    </article>
+
+    <!-- Secondary Windows Workstation -->
+    <article
+        class="device-card"
+        id="windows-workstation-card"
+        data-device-id="windows-workstation"
+    >
+        <div class="card-header">
+            <div>
+                <p class="device-type">Windows workstation</p>
+                <h2>Windows Workstation</h2>
+            </div>
+
+            <span
+                id="windows-workstation-status"
+                class="status-pill loading"
+            >
+                Loading
+            </span>
+        </div>
+
+        <div class="metric-grid">
+            <div
+                class="metric"
+                id="windows-workstation-cpu-metric"
+            >
+                <span>CPU usage</span>
+                <strong id="windows-workstation-cpu">—</strong>
+            </div>
+
+            <div
+                class="metric"
+                id="windows-workstation-memory-metric"
+            >
+                <span>Memory</span>
+                <strong id="windows-workstation-memory">—</strong>
+            </div>
+
+            <div class="metric">
+                <span>Storage</span>
+                <strong id="windows-workstation-storage">—</strong>
+            </div>
+
+            <div class="metric">
+                <span>Uptime</span>
+                <strong id="windows-workstation-uptime">—</strong>
+            </div>
+        </div>
+
+        <div class="card-footer">
+            <span id="windows-workstation-drivecount">
+                Waiting for drive data
+            </span>
+
+            <a
+                class="details-button"
+                href="/device/windows/windows-workstation"
+            >
+                View details
+            </a>
+        </div>
+    </article>
+
+    <!-- Docker -->
+    <a
+        class="device-card docker-home-card"
+        href="/docker"
+    >
+        <div class="card-header">
+            <div>
+                <p class="device-type">
+                    Containers
+                </p>
+
+                <h2>Docker</h2>
+            </div>
+
+            <span
+                id="home-docker-status"
+                class="status-pill loading"
+            >
+                Loading
+            </span>
+        </div>
+
+        <div class="metric-grid">
+            <div class="metric">
+                <span>Running</span>
+
+                <strong id="home-docker-running">
+                    —
+                </strong>
+            </div>
+
+            <div class="metric">
+                <span>Registered</span>
+
+                <strong id="home-docker-services">
+                    —
+                </strong>
+            </div>
+
+            <div class="metric">
+                <span>Attention</span>
+
+                <strong id="home-docker-attention">
+                    —
+                </strong>
+            </div>
+
+            <div class="metric">
+                <span>Host</span>
+
+                <strong>
+                    Ubuntu NUC
+                </strong>
+            </div>
+        </div>
+
+        <div class="card-footer">
+            <span>
+                Docker Mission Control
+            </span>
+
+            <span class="details-button">
+                View details →
+            </span>
+        </div>
+    </a>
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+<script
+    src="{{ url_for('static', filename='js/homeland-components.js') }}?v=3"
+></script>
+
+<script
+    src="{{ url_for('static', filename='js/dashboard.js') }}?v=3"
+></script>
+{% endblock %}

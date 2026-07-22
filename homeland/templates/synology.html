@@ -1,0 +1,128 @@
+{% extends "devices/device_base.html" %}
+{% block title %}Synology DS925+ · Homeland{% endblock %}
+
+
+{% set device_name = "Synology NAS" %}
+{% set device_description = "Network Attached Storage" %}
+{% block device_content %}
+<section class="summary-strip">
+    <div class="summary-item">
+        <span>Storage used</span>
+        <strong id="summary-storage">—</strong>
+    </div>
+
+    <div class="summary-item">
+        <span>System temperature</span>
+        <strong id="summary-temperature">—</strong>
+    </div>
+
+    <div class="summary-item">
+        <span>Warmest drive</span>
+        <strong id="summary-disk-temperature">—</strong>
+    </div>
+
+    <div class="summary-item">
+        <span>Uptime</span>
+        <strong id="summary-uptime">—</strong>
+    </div>
+</section>
+
+<section class="detail-section">
+    <div class="section-heading">
+        <div>
+            <p class="eyebrow">Capacity</p>
+            <h2>Storage</h2>
+        </div>
+
+        <span id="storage-health" class="status-pill loading">
+            Loading
+        </span>
+    </div>
+
+    <div class="storage-panel">
+        <div class="large-storage-number">
+            <strong id="storage-percent">—</strong>
+            <span>used</span>
+        </div>
+
+        <div class="storage-details">
+            <div class="progress-track large">
+                <div
+                    id="storage-bar"
+                    class="progress-bar"
+                    style="width: 0%"
+                ></div>
+            </div>
+
+            <div class="storage-values">
+                <div>
+                    <span>Total</span>
+                    <strong id="storage-total">—</strong>
+                </div>
+
+                <div>
+                    <span>Used</span>
+                    <strong id="storage-used">—</strong>
+                </div>
+
+                <div>
+                    <span>Free</span>
+                    <strong id="storage-free">—</strong>
+                </div>
+
+                <div>
+                    <span>Hot spares</span>
+                    <strong id="storage-hot-spares">—</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="detail-section">
+    <div class="section-heading">
+        <div>
+            <p class="eyebrow">Hardware</p>
+            <h2>Drives</h2>
+        </div>
+
+        <span id="drive-count">— drives</span>
+    </div>
+
+    <div id="drive-grid" class="drive-grid">
+        <p class="loading-message">Loading drive data…</p>
+    </div>
+</section>
+
+<section class="detail-section future-section">
+    <div class="section-heading">
+        <div>
+            <p class="eyebrow">Coming next</p>
+            <h2>Performance and network</h2>
+        </div>
+    </div>
+
+    <div class="future-grid">
+        <div>
+            <strong>Network throughput</strong>
+            <span>Download and upload rates from eth0</span>
+        </div>
+
+        <div>
+            <strong>Disk performance</strong>
+            <span>Read, write, IOPS, and load</span>
+        </div>
+
+        <div>
+            <strong>SMART attributes</strong>
+            <span>Detailed health information per drive</span>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script
+    src="{{ url_for('static', filename='js/synology.js') }}"
+></script>
+{% endblock %}

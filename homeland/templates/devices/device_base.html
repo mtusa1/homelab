@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+{% include "components/device_header.html" %}
+
+<div class="last-updated">
+    Last updated
+    <strong id="last-updated">Loading...</strong>
+</div>
+
+{% block device_content %}
+{% endblock %}
+
+{% endblock %}

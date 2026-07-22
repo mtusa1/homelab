@@ -1,0 +1,143 @@
+{% extends "devices/device_base.html" %}
+
+{% block title %}Ubuntu NUC · Homeland{% endblock %}
+
+{% set device_name = "Ubuntu NUC" %}
+{% set device_description = "Primary Docker Server" %}
+
+{% block device_content %}
+<section class="summary-strip">
+    <div class="summary-item">
+        <span>CPU usage</span>
+        <strong id="summary-cpu">—</strong>
+    </div>
+
+    <div class="summary-item">
+        <span>Memory</span>
+        <strong id="summary-memory">—</strong>
+    </div>
+
+    <div class="summary-item">
+        <span>Containers</span>
+        <strong id="summary-containers">—</strong>
+    </div>
+
+    <div class="summary-item">
+        <span>Uptime</span>
+        <strong id="summary-uptime">—</strong>
+    </div>
+</section>
+
+<section class="detail-section">
+    <div class="section-heading">
+        <div>
+            <p class="eyebrow">System performance</p>
+            <h2>Compute and memory</h2>
+        </div>
+    </div>
+
+    <div class="metric-grid">
+        <div class="metric">
+            <span>CPU usage</span>
+            <strong id="cpu-percent">—</strong>
+        </div>
+
+        <div class="metric">
+            <span>Memory usage</span>
+            <strong id="memory-percent">—</strong>
+        </div>
+
+        <div class="metric">
+            <span>Memory allocation</span>
+            <strong id="memory-display">—</strong>
+        </div>
+
+        <div class="metric">
+            <span>System uptime</span>
+            <strong id="uptime-display">—</strong>
+        </div>
+    </div>
+
+    <div class="storage-visual">
+        <div class="storage-heading">
+            <span>Memory utilization</span>
+            <strong id="memory-bar-label">—</strong>
+        </div>
+
+        <div class="progress-track">
+            <div
+                id="memory-bar"
+                class="progress-bar"
+                style="width: 0%"
+            ></div>
+        </div>
+    </div>
+</section>
+
+<section class="detail-section">
+    <div class="section-heading">
+        <div>
+            <p class="eyebrow">Processor pressure</p>
+            <h2>Load averages</h2>
+        </div>
+    </div>
+
+    <div class="metric-grid">
+        <div class="metric">
+            <span>1 minute</span>
+            <strong id="load-1m">—</strong>
+        </div>
+
+        <div class="metric">
+            <span>5 minutes</span>
+            <strong id="load-5m">—</strong>
+        </div>
+
+        <div class="metric">
+            <span>15 minutes</span>
+            <strong id="load-15m">—</strong>
+        </div>
+    </div>
+</section>
+
+<section class="detail-section">
+    <div class="section-heading">
+        <div>
+            <p class="eyebrow">Filesystem capacity</p>
+            <h2>Mounted volumes</h2>
+        </div>
+
+        <span id="storage-summary" class="status-pill loading">
+            Loading
+        </span>
+    </div>
+
+    <div id="filesystem-grid" class="filesystem-grid">
+        <p class="loading-message">
+            Loading filesystem data…
+        </p>
+    </div>
+</section>
+
+<section class="detail-section">
+    <div class="section-heading">
+        <div>
+            <p class="eyebrow">Container platform</p>
+            <h2>Docker</h2>
+        </div>
+    </div>
+
+    <div class="metric-grid">
+        <div class="metric">
+            <span>Containers detected</span>
+            <strong id="docker-containers">—</strong>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script
+    src="{{ url_for('static', filename='js/nuc.js') }}"
+></script>
+{% endblock %}

@@ -1,0 +1,79 @@
+{% extends "devices/device_base.html" %}
+
+{% block title %}{{ device_name }} · Homeland{% endblock %}
+
+{% block device_content %}
+
+<div id="windows-device-page"
+     data-device-id="{{ device_id }}">
+</div>
+
+<section class="summary-strip">
+    <div class="summary-item">
+        <span>CPU usage</span>
+        <strong id="summary-cpu">—</strong>
+    </div>
+
+    <div class="summary-item">
+        <span>Memory</span>
+        <strong id="summary-memory">—</strong>
+    </div>
+
+    <div class="summary-item">
+        <span>Drives</span>
+        <strong id="summary-disk-count">—</strong>
+    </div>
+
+    <div class="summary-item">
+        <span>Uptime</span>
+        <strong id="summary-uptime">—</strong>
+    </div>
+</section>
+
+<section class="detail-section">
+
+    <div class="section-heading">
+        <div>
+            <p class="eyebrow">System performance</p>
+            <h2>Compute and memory</h2>
+        </div>
+    </div>
+
+    <div class="metric-grid">
+        <div class="metric">
+            <span>CPU usage</span>
+            <strong id="cpu-display">—</strong>
+        </div>
+
+        <div class="metric">
+            <span>Memory usage</span>
+            <strong id="memory-display">—</strong>
+        </div>
+
+        <div class="metric">
+            <span>System uptime</span>
+            <strong id="uptime-display">—</strong>
+        </div>
+    </div>
+
+</section>
+
+<section class="detail-section">
+
+    <div class="section-heading">
+        <div>
+            <p class="eyebrow">Storage</p>
+            <h2>Windows Volumes</h2>
+        </div>
+    </div>
+
+    <div id="drive-grid" class="metric-grid"></div>
+
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/homeland-components.js') }}"></script>
+<script src="{{ url_for('static', filename='js/windows.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Docker | Homeland</title>
+
+    <link rel="stylesheet" href="/static/css/homeland.css">
+</head>
+
+<body class="homeland-body">
+    <main class="docker-page page-shell">
+
+        <header class="docker-hero">
+            <div class="docker-hero-copy">
+                <a class="docker-back-link" href="/">
+                    ← Mission Control
+                </a>
+
+                <div class="docker-title-row">
+                    <div class="docker-title-icon">🐳</div>
+
+                    <div>
+                        <p class="docker-eyebrow">Infrastructure</p>
+                        <h1>Docker Engine</h1>
+                        <p class="docker-subtitle">
+                            Applications and containers running on the Ubuntu NUC
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="docker-hero-actions">
+                <span id="docker-engine-status" class="docker-engine-status">
+                    Checking engine…
+                </span>
+
+                <button id="docker-refresh" class="docker-refresh-button" type="button">
+                    Refresh
+                </button>
+            </div>
+        </header>
+
+        <section class="docker-summary-grid" aria-label="Docker summary">
+            <article class="docker-summary-card">
+                <span class="docker-summary-label">Applications</span>
+                <strong id="docker-applications" class="docker-summary-value">—</strong>
+                <span class="docker-summary-caption">Registered services</span>
+            </article>
+
+            <article class="docker-summary-card">
+                <span class="docker-summary-label">Containers</span>
+                <strong id="docker-total" class="docker-summary-value">—</strong>
+                <span class="docker-summary-caption">Discovered by Docker</span>
+            </article>
+
+            <article class="docker-summary-card">
+                <span class="docker-summary-label">Running</span>
+                <strong id="docker-running" class="docker-summary-value">—</strong>
+                <span class="docker-summary-caption">Currently online</span>
+            </article>
+
+            <article class="docker-summary-card">
+                <span class="docker-summary-label">Attention</span>
+                <strong id="docker-attention" class="docker-summary-value">—</strong>
+                <span class="docker-summary-caption">Stopped or unknown</span>
+            </article>
+        </section>
+
+        <section class="docker-toolbar">
+            <div>
+                <h2>Services</h2>
+                <p>Friendly applications backed by Docker containers.</p>
+            </div>
+
+            <label class="docker-search">
+                <span class="sr-only">Search services</span>
+                <input
+                    id="docker-search"
+                    type="search"
+                    placeholder="Search services…"
+                    autocomplete="off"
+                >
+            </label>
+        </section>
+
+        <div id="docker-message" class="docker-message" hidden></div>
+
+        <section id="docker-service-sections" class="docker-service-sections">
+            <div class="docker-loading-card">
+                Loading Docker services…
+            </div>
+        </section>
+
+        <section class="docker-technical-section">
+            <button
+                id="docker-technical-toggle"
+                class="docker-technical-toggle"
+                type="button"
+                aria-expanded="false"
+            >
+                <span>Technical containers</span>
+                <span id="docker-technical-count">0</span>
+            </button>
+
+            <div id="docker-technical-panel" class="docker-technical-panel" hidden>
+                <div id="docker-technical-grid" class="docker-technical-grid"></div>
+            </div>
+        </section>
+
+    </main>
+
+    <script src="/static/js/docker.js?v=4"></script>
+</body>
+</html>

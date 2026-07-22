@@ -1,0 +1,9 @@
+services:
+  inventory-api:
+    build: .
+    container_name: inventory-api
+    ports:
+      - "8088:8088"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    restart: unless-stopped

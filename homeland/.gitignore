@@ -1,0 +1,41 @@
+# Environment and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+
+# Local backups
+*.bak
+*.backup
+*.backup-*
+*.before-*
+*~er
+backups/
+
+# Logs and runtime files
+*.log
+*.pid
+*.sqlite
+*.sqlite3
+instance/
+
+# Editor and operating-system files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Generated artifacts
+dist/
+build/
+coverage/
+htmlcov/

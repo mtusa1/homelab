@@ -1,0 +1,16 @@
+{
+  "name": "phase2_overview",
+  "version": "1.0.0",
+  "description": "Adds the Phase 2 Global Overview section.",
+  "files": {
+    "template": "assets/dashboard.html",
+    "styles": "assets/homeland.css",
+    "javascript": "assets/dashboard.js"
+  },
+  "verification": {
+    "homepage_contains": [
+      "HOMELAND GLOBAL OVERVIEW",
+      "global-overview-title"
+    ]
+  }
+}

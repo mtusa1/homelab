@@ -1,0 +1,9 @@
+{
+  "hdk_version": "0.2.0",
+  "modules": {
+    "phase2_overview": {
+      "version": "1.0.0",
+      "installed_at": null
+    }
+  }
+}
