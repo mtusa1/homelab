@@ -5,11 +5,14 @@ import os
 from typing import Any
 
 import requests
+from config_loader import get_homeland_config
 
+
+_config = get_homeland_config()
 
 PROMETHEUS_URL = os.getenv(
     "PROMETHEUS_URL",
-    "http://192.168.5.134:9090",
+    _config["prometheus"]["url"],
 )
 
 
