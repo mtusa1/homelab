@@ -1,7 +1,8 @@
-from services.discovery import discover_services
-from devices.nuc import get_nuc_data
+from core.alert_manager import alert_manager
 from core.device_manager import device_manager
 from core.health_manager import health_manager
+from devices.nuc import get_nuc_data
+from services.discovery import discover_services
 
 
 def build_overview():
@@ -53,76 +54,46 @@ def build_overview():
         .get("used_percent", 0)
     )
 
-    alerts = []
+    memory_data = nuc.get("memory", {})
 
-    for filesystem in filesystems:
-        used_percent = filesystem.get("used_percent", 0)
+    memory_percent = memory_data.get("used_percent")
 
-        if used_percent >= 90:
-            alerts.append(
-                {
-                    "level": "critical",
-                    "message": (
-                        f'{filesystem.get("name", "Storage")} '
-                        f'is {used_percent}% full'
-                    ),
-                }
-            )
-        elif used_percent >= 80:
-            alerts.append(
-                {
-                    "level": "warning",
-                    "message": (
-                        f'{filesystem.get("name", "Storage")} '
-                        f'is {used_percent}% full'
-                    ),
-                }
-            )
+    if memory_percent is None:
+        memory_percent = memory_data.get("percent")
 
-    stopped_services = [
-        service
-        for service in services
-        if service.get("status") != "running"
-    ]
+    device_health = health_manager.check_all(
+        include_disabled=True,
+    )
 
-    if stopped_services:
-        alerts.append(
-            {
-                "level": "warning",
-                "message": (
-                    f"{len(stopped_services)} Docker "
-                    "container(s) are not running"
-                ),
-            }
-        )
-
-    if not alerts:
-        alerts.append(
-            {
-                "level": "healthy",
-                "message": "All monitored systems are operating normally",
-            }
-        )
-
-    health = "healthy"
-
-    if any(
-        alert.get("level") == "critical"
-        for alert in alerts
-    ):
-        health = "critical"
-    elif any(
-        alert.get("level") == "warning"
-        for alert in alerts
-    ):
-        health = "warning"
+    alerts = alert_manager.evaluate(
+        filesystems=filesystems,
+        services=services,
+        device_health=device_health,
+        cpu_percent=cpu_percent,
+        memory_percent=memory_percent,
+    )
 
     return {
-        "health": health,
+        "health": alert_manager.overall_health(alerts),
         "devices": {
-            "online": health_manager.count_online(),
+            "online": sum(
+                result.status == "online"
+                for result in device_health
+            ),
             "total": device_manager.count_total(),
-            "statuses": health_manager.count_by_status(),
+            "statuses": {
+                status: sum(
+                    result.status == status
+                    for result in device_health
+                )
+                for status in (
+                    "online",
+                    "offline",
+                    "degraded",
+                    "unknown",
+                    "disabled",
+                )
+            },
         },
         "docker": {
             "running": len(running_services),
@@ -137,5 +108,5 @@ def build_overview():
         "cpu": {
             "average_percent": cpu_percent,
         },
-        "alerts": alerts,
+        "alerts": alert_manager.as_dicts(alerts),
     }
