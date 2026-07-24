@@ -1,0 +1,2189 @@
+==================================================
+HOMELAND PROJECT AUDIT
+==================================================
+
+===== DIRECTORY TREE =====
+.
+├── app.py
+├── compose.yml
+├── config
+│   ├── alerts.yml
+│   ├── devices.yml
+│   ├── homeland.yml
+│   └── services.yml
+├── config_loader.py
+├── core
+│   ├── alert_manager.py
+│   ├── config.py
+│   ├── device_manager.py
+│   ├── health_manager.py
+│   ├── __init__.py
+│   └── service_manager.py
+├── devices
+│   ├── __init__.py
+│   ├── nuc.py
+│   ├── synology.py
+│   └── windows.py
+├── Dockerfile
+├── .dockerignore
+├── docs
+│   └── roadmap.md
+├── .gitignore
+├── homeland-audit.txt
+├── models
+│   └── __init__.py
+├── README.md
+├── requirements.txt
+├── routes
+│   └── __init__.py
+├── screenshots
+├── scripts
+├── services
+│   ├── discovery.py
+│   ├── docker_engine.py
+│   ├── groups.py
+│   ├── __init__.py
+│   ├── models.py
+│   ├── overview.py
+│   ├── prometheus.py
+│   ├── registry.py
+│   └── service_registry.py
+├── static
+│   ├── css
+│   │   └── homeland.css
+│   └── js
+│       ├── common.js
+│       ├── dashboard.js
+│       ├── docker.js
+│       ├── homeland-components.js
+│       ├── nuc.js
+│       ├── synology.js
+│       └── windows.js
+├── templates
+│   ├── base.html
+│   ├── components
+│   │   └── device_header.html
+│   ├── dashboard.html
+│   ├── devices
+│   │   └── device_base.html
+│   ├── docker.html
+│   ├── nuc.html
+│   ├── synology.html
+│   └── windows.html
+└── tools
+    ├── config.json
+    ├── engine
+    │   ├── __init__.py
+    │   ├── logger.py
+    │   ├── manifest.py
+    │   ├── paths.py
+    │   ├── registry.py
+    │   ├── status.py
+    │   └── ui.py
+    ├── homeland_builder.py
+    ├── installed.json
+    ├── installed_patches.json
+    └── patches
+        ├── __init__.py
+        ├── phase2_overview
+        │   ├── assets
+        │   │   ├── dashboard.html
+        │   │   ├── dashboard.js
+        │   │   └── homeland.css
+        │   ├── feature.py
+        │   └── manifest.json
+        └── phase2_overview.py
+
+21 directories, 69 files
+
+===== PYTHON FILES =====
+
+===== ./app.py =====
+from __future__ import annotations
+
+from flask import Flask, jsonify, render_template
+from devices.nuc import get_nuc_data
+from devices.windows import get_windows_data
+from services.discovery import discover_services
+from services.overview import build_overview
+
+
+from devices.synology import (
+    get_details as get_synology_details,
+    get_disks as get_synology_disks,
+    get_storage as get_synology_storage,
+    get_summary as get_synology_summary,
+)
+from services.prometheus import (
+    first_value,
+    format_bytes,
+    format_uptime,
+)
+
+
+app = Flask(__name__)
+
+@app.get("/api/overview")
+def overview_api():
+    return jsonify(build_overview())
+
+@app.get("/health")
+def health():
+    return jsonify(status="ok")
+
+@app.get("/")
+def dashboard():
+    return render_template("dashboard.html")
+
+
+@app.get("/device/synology")
+def synology_page():
+    return render_template("synology.html")
+@app.get("/nuc")
+def nuc():
+    data = get_nuc_data()
+    return jsonify(data["summary"])
+
+@app.get("/api/device/nuc")
+def nuc_device_api():
+    return jsonify(get_nuc_data())
+
+@app.get("/device/nuc")
+def nuc_page():
+    return render_template("nuc.html")
+
+@app.get("/device/windows/<device_id>")
+def windows_page(device_id):
+    data = get_windows_data(device_id)
+
+    if data is None:
+        return "Unknown device", 404
+
+    return render_template(
+        "windows.html",
+        device_name=data["device"],
+        device_description=data["description"],
+        device_id=device_id,
+    )
+
+
+@app.get("/api/device/windows/<device_id>")
+def windows_api(device_id):
+    data = get_windows_data(device_id)
+
+    if data is None:
+        return jsonify(error="Unknown device"), 404
+
+    return jsonify(data)
+
+
+@app.get("/nas/synology")
+def synology_status():
+    """Existing Homepage-compatible endpoint."""
+    return jsonify(get_synology_summary())
+
+
+@app.get("/api/device/synology")
+def synology_details():
+    return jsonify(get_synology_details())
+
+
+@app.get("/api/device/synology/storage")
+def synology_storage():
+    return jsonify(get_synology_storage())
+
+
+@app.get("/api/device/synology/disks")
+def synology_disks():
+    return jsonify(get_synology_disks())
+
+@app.get("/api/docker")
+def docker_api():
+    return jsonify(discover_services())
+
+@app.get("/docker")
+def docker_page():
+    return render_template("docker.html")
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=8088)
+
+===== ./config_loader.py =====
+from pathlib import Path
+from typing import Any
+
+import yaml
+
+
+BASE_DIR = Path(__file__).resolve().parent
+CONFIG_DIR = BASE_DIR / "config"
+
+
+def load_yaml(filename: str) -> dict[str, Any]:
+    path = CONFIG_DIR / filename
+
+    if not path.exists():
+        raise FileNotFoundError(f"Configuration file not found: {path}")
+
+    with path.open("r", encoding="utf-8") as config_file:
+        data = yaml.safe_load(config_file) or {}
+
+    if not isinstance(data, dict):
+        raise ValueError(f"Configuration root must be a mapping: {path}")
+
+    return data
+
+
+def get_homeland_config() -> dict[str, Any]:
+    return load_yaml("homeland.yml")
+
+===== ./core/alert_manager.py =====
+
+===== ./core/config.py =====
+from pathlib import Path
+from typing import Any
+
+import yaml
+
+
+class ConfigError(RuntimeError):
+    """Raised when Homeland configuration cannot be loaded."""
+
+
+class ConfigManager:
+    def __init__(self, config_dir: str | Path | None = None) -> None:
+        if config_dir is None:
+            config_dir = Path(__file__).resolve().parent.parent / "config"
+
+        self.config_dir = Path(config_dir)
+        self._cache: dict[str, dict[str, Any]] = {}
+
+    def _path_for(self, name: str) -> Path:
+        filename = name if name.endswith(".yml") else f"{name}.yml"
+        return self.config_dir / filename
+
+    def load(self, name: str, *, reload: bool = False) -> dict[str, Any]:
+        cache_key = name.removesuffix(".yml")
+
+        if not reload and cache_key in self._cache:
+            return self._cache[cache_key]
+
+        path = self._path_for(name)
+
+        if not path.exists():
+            raise ConfigError(f"Configuration file not found: {path}")
+
+        try:
+            with path.open("r", encoding="utf-8") as file:
+                data = yaml.safe_load(file) or {}
+        except yaml.YAMLError as exc:
+            raise ConfigError(f"Invalid YAML in {path}: {exc}") from exc
+        except OSError as exc:
+            raise ConfigError(f"Could not read {path}: {exc}") from exc
+
+        if not isinstance(data, dict):
+            raise ConfigError(
+                f"Top-level configuration in {path} must be a mapping."
+            )
+
+        self._cache[cache_key] = data
+        return data
+
+    def get(self, config_name: str, key: str, default: Any = None) -> Any:
+        data: Any = self.load(config_name)
+
+        for part in key.split("."):
+            if not isinstance(data, dict) or part not in data:
+                return default
+            data = data[part]
+
+        return data
+
+    def reload_all(self) -> None:
+        self._cache.clear()
+
+
+config = ConfigManager()
+
+===== ./core/device_manager.py =====
+
+===== ./core/health_manager.py =====
+
+===== ./core/__init__.py =====
+
+===== ./core/service_manager.py =====
+
+===== ./devices/__init__.py =====
+
+===== ./devices/nuc.py =====
+from services.prometheus import first_value, format_uptime
+
+def get_filesystem_data(name, mountpoint):
+    total = first_value(
+        f'node_filesystem_size_bytes{{job="nuc",mountpoint="{mountpoint}",fstype!~"tmpfs|overlay"}}'
+    )
+
+    available = first_value(
+        f'node_filesystem_avail_bytes{{job="nuc",mountpoint="{mountpoint}",fstype!~"tmpfs|overlay"}}'
+    )
+
+    used = None
+    used_percent = None
+
+    if total is not None and available is not None:
+        used = max(0.0, total - available)
+
+        if total > 0:
+            used_percent = used / total * 100.0
+
+    return {
+        "name": name,
+        "mountpoint": mountpoint,
+        "used_bytes": used,
+        "total_bytes": total,
+        "available_bytes": available,
+        "used_percent": (
+            round(used_percent, 1)
+            if used_percent is not None
+            else None
+        ),
+        "used": format_bytes(used),
+        "total": format_bytes(total),
+        "available": format_bytes(available),
+    }
+
+def get_nuc_data():
+    cpu_idle = first_value(
+        'avg(rate(node_cpu_seconds_total{job="nuc",mode="idle"}[5m]))'
+    )
+
+    cpu_percent = (
+        None
+        if cpu_idle is None
+        else max(0.0, min(100.0, (1.0 - cpu_idle) * 100.0))
+    )
+
+    memory_total = first_value(
+        'node_memory_MemTotal_bytes{job="nuc"}'
+    )
+
+    memory_available = first_value(
+        'node_memory_MemAvailable_bytes{job="nuc"}'
+    )
+
+    memory_used = None
+    memory_percent = None
+    memory_text = "Unknown"
+
+    if memory_total is not None and memory_available is not None:
+        memory_used = max(0.0, memory_total - memory_available)
+
+        if memory_total > 0:
+            memory_percent = memory_used / memory_total * 100.0
+
+        memory_text = (
+            f"{memory_used / (1024**3):.1f} / "
+            f"{memory_total / (1024**3):.1f} GiB"
+        )
+
+    uptime = first_value(
+        'time() - node_boot_time_seconds{job="nuc"}'
+    )
+
+    containers = first_value(
+        'count(container_last_seen{name!=""})'
+    )
+
+    load_1m = first_value(
+        'node_load1{job="nuc"}'
+    )
+
+    load_5m = first_value(
+        'node_load5{job="nuc"}'
+    )
+
+    load_15m = first_value(
+        'node_load15{job="nuc"}'
+    )
+
+    filesystems = [
+        get_filesystem_data("Ubuntu Root", "/"),
+        get_filesystem_data("Media", "/media/tusa/Media"),
+        get_filesystem_data("Storage", "/media/tusa/Storage"),
+        get_filesystem_data("Data", "/media/tusa/Data"),
+    ]
+
+    return {
+        "summary": {
+            "status": "Online",
+            "cpu": (
+                f"{cpu_percent:.1f}%"
+                if cpu_percent is not None
+                else "Unknown"
+            ),
+            "memory": memory_text,
+            "containers": (
+                f"{int(containers)} detected"
+                if containers is not None
+                else "Unknown"
+            ),
+            "uptime": format_uptime(uptime),
+        },
+        "cpu": {
+            "used_percent": (
+                round(cpu_percent, 1)
+                if cpu_percent is not None
+                else None
+            ),
+            "display": (
+                f"{cpu_percent:.1f}%"
+                if cpu_percent is not None
+                else "Unknown"
+            ),
+            "load_1m": (
+                round(load_1m, 2)
+                if load_1m is not None
+                else None
+            ),
+            "load_5m": (
+                round(load_5m, 2)
+                if load_5m is not None
+                else None
+            ),
+            "load_15m": (
+                round(load_15m, 2)
+                if load_15m is not None
+                else None
+            ),
+        },
+        "memory": {
+            "display": memory_text,
+            "used_bytes": memory_used,
+            "total_bytes": memory_total,
+            "used_percent": (
+                round(memory_percent, 1)
+                if memory_percent is not None
+                else None
+            ),
+        },
+        "storage": {
+            "filesystems": filesystems,
+        },
+        "docker": {
+            "containers_detected": (
+                int(containers)
+                if containers is not None
+                else None
+            ),
+        },
+        "uptime": format_uptime(uptime),
+    }
+
+
+def format_bytes(value):
+    if value is None:
+        return "Unknown"
+
+    units = ["B", "KiB", "MiB", "GiB", "TiB"]
+    size = float(value)
+
+    for unit in units:
+        if abs(size) < 1024.0 or unit == units[-1]:
+            return f"{size:.1f} {unit}"
+
+        size /= 1024.0
+
+    return "Unknown"
+
+===== ./devices/synology.py =====
+from __future__ import annotations
+
+from typing import Any
+
+from services.prometheus import (
+    first_value,
+    format_bytes,
+    format_uptime,
+    query,
+    values,
+)
+
+
+JOB = "synology-snmp"
+VOLUME_NAME = "Volume 1"
+
+
+def _metric(name: str, extra_labels: str = "") -> str:
+    labels = f'job="{JOB}"'
+
+    if extra_labels:
+        labels = f"{labels},{extra_labels}"
+
+    return f"{name}{{{labels}}}"
+
+
+def _status_text(value: float | None) -> str:
+    if value is None:
+        return "Unknown"
+
+    return "Healthy" if value == 1 else f"Warning ({int(value)})"
+
+
+def _temperature_text(value: float | None) -> str:
+    if value is None:
+        return "Unknown"
+
+    return f"{value:.0f} °C"
+
+
+def get_summary() -> dict[str, Any]:
+    online = first_value(_metric("up"))
+    uptime_ticks = first_value(_metric("sysUpTime"))
+    temperature = first_value(_metric("temperature"))
+
+    raid_status = first_value(
+        _metric("raidStatus", f'raidName="{VOLUME_NAME}"')
+    )
+    raid_total = first_value(
+        _metric("raidTotalSize", f'raidName="{VOLUME_NAME}"')
+    )
+    raid_free = first_value(
+        _metric("raidFreeSize", f'raidName="{VOLUME_NAME}"')
+    )
+
+    disk_temperatures = [
+        float(value)
+        for value in values(_metric("diskTemperature"))
+        if value is not None
+    ]
+
+    uptime_seconds = (
+        uptime_ticks / 100
+        if uptime_ticks is not None
+        else None
+    )
+
+    storage_used_percent = None
+
+    if (
+        raid_total is not None
+        and raid_free is not None
+        and raid_total > 0
+    ):
+        storage_used_percent = (
+            (raid_total - raid_free) / raid_total
+        ) * 100
+
+    max_disk_temperature = (
+        max(disk_temperatures)
+        if disk_temperatures
+        else None
+    )
+
+    return {
+        "status": "Online" if online == 1 else "Offline",
+        "health": _status_text(raid_status),
+        "uptime": format_uptime(uptime_seconds),
+        "temperature": _temperature_text(temperature),
+        "disk_temperature": _temperature_text(
+            max_disk_temperature
+        ),
+        "storage": (
+            f"{storage_used_percent:.1f}% used"
+            if storage_used_percent is not None
+            else "Unknown"
+        ),
+        "raid": _status_text(raid_status),
+    }
+
+
+def get_storage() -> dict[str, Any]:
+    total = first_value(
+        _metric("raidTotalSize", f'raidName="{VOLUME_NAME}"')
+    )
+    free = first_value(
+        _metric("raidFreeSize", f'raidName="{VOLUME_NAME}"')
+    )
+    status = first_value(
+        _metric("raidStatus", f'raidName="{VOLUME_NAME}"')
+    )
+    hot_spares = first_value(
+        _metric("raidHotspareCnt", f'raidName="{VOLUME_NAME}"')
+    )
+
+    used = None
+    used_percent = None
+
+    if total is not None and free is not None:
+        used = max(0.0, total - free)
+
+        if total > 0:
+            used_percent = used / total * 100
+
+    return {
+        "name": VOLUME_NAME,
+        "status": _status_text(status),
+        "total_bytes": total,
+        "used_bytes": used,
+        "free_bytes": free,
+        "total": format_bytes(total),
+        "used": format_bytes(used),
+        "free": format_bytes(free),
+        "used_percent": (
+            round(used_percent, 1)
+            if used_percent is not None
+            else None
+        ),
+        "hot_spares": (
+            int(hot_spares)
+            if hot_spares is not None
+            else None
+        ),
+    }
+
+
+def get_disks() -> list[dict[str, Any]]:
+    disk_metrics: dict[str, dict[str, Any]] = {}
+
+    metric_definitions = {
+        "diskModel": "model",
+        "diskType": "type",
+        "diskStatus": "status_code",
+        "diskHealthStatus": "health_code",
+        "diskTemperature": "temperature",
+        "diskBadSector": "bad_sectors",
+        "diskRemainLife": "remaining_life",
+        "diskRetry": "retries",
+        "diskIdentifyFail": "identify_failures",
+    }
+
+    for metric_name, field_name in metric_definitions.items():
+        for result in query(_metric(metric_name)):
+            labels = result.get("metric", {})
+            disk_id = labels.get("diskID")
+
+            if not disk_id:
+                continue
+
+            disk = disk_metrics.setdefault(
+                disk_id,
+                {"disk_id": disk_id},
+            )
+
+            if field_name in {"model", "type"}:
+                disk[field_name] = labels.get(metric_name, "Unknown")
+                continue
+
+            try:
+                disk[field_name] = float(result["value"][1])
+            except (KeyError, IndexError, TypeError, ValueError):
+                disk[field_name] = None
+
+    disks = []
+
+    for index, disk_id in enumerate(sorted(disk_metrics), start=1):
+        disk = disk_metrics[disk_id]
+
+        status_code = disk.get("status_code")
+        health_code = disk.get("health_code")
+        remaining_life = disk.get("remaining_life")
+
+        disks.append(
+            {
+                "name": f"Drive {index}",
+                "disk_id": disk_id,
+                "model": disk.get("model", "Unknown"),
+                "type": disk.get("type", "Unknown"),
+                "status": _status_text(status_code),
+                "health": _status_text(health_code),
+                "temperature": _temperature_text(
+                    disk.get("temperature")
+                ),
+                "temperature_c": disk.get("temperature"),
+                "bad_sectors": int(
+                    disk.get("bad_sectors") or 0
+                ),
+                "retries": int(disk.get("retries") or 0),
+                "identify_failures": int(
+                    disk.get("identify_failures") or 0
+                ),
+                "remaining_life": (
+                    None
+                    if remaining_life is None
+                    or remaining_life < 0
+                    else remaining_life
+                ),
+            }
+        )
+
+    return disks
+
+
+def get_details() -> dict[str, Any]:
+    return {
+        "summary": get_summary(),
+        "storage": get_storage(),
+        "disks": get_disks(),
+    }
+
+===== ./devices/windows.py =====
+from services.prometheus import (
+    first_value,
+    format_bytes,
+    format_uptime,
+    query_vector,
+)
+
+
+WINDOWS_DEVICES = {
+    "main-desktop": {
+        "job": "windows-main-desktop",
+        "name": "Main Desktop",
+        "description": "Primary Windows Workstation",
+    },
+    "windows-workstation": {
+        "job": "windows-workstation",
+        "name": "Windows Workstation",
+        "description": "Secondary RTX 3070 Workstation",
+    },
+}
+
+
+def get_windows_drives(job):
+    """
+    Discover all normal Windows drive-letter volumes.
+
+    Recovery/system volumes such as HarddiskVolume1 are excluded because
+    only volume labels ending in ':' are accepted.
+    """
+    size_results = query_vector(
+        f'windows_logical_disk_size_bytes{{job="{job}"}}'
+    )
+
+    free_results = query_vector(
+        f'windows_logical_disk_free_bytes{{job="{job}"}}'
+    )
+
+    sizes_by_volume = {}
+    free_by_volume = {}
+
+    for result in size_results:
+        metric = result.get("metric", {})
+        volume = metric.get("volume")
+        value = result.get("value")
+
+        if (
+            isinstance(volume, str)
+            and volume.endswith(":")
+            and value is not None
+            and value > 0
+        ):
+            sizes_by_volume[volume] = value
+
+    for result in free_results:
+        metric = result.get("metric", {})
+        volume = metric.get("volume")
+        value = result.get("value")
+
+        if (
+            isinstance(volume, str)
+            and volume.endswith(":")
+            and value is not None
+            and value >= 0
+        ):
+            free_by_volume[volume] = value
+
+    drives = []
+
+    for volume in sorted(sizes_by_volume):
+        total_bytes = sizes_by_volume[volume]
+        free_bytes = free_by_volume.get(volume)
+
+        if free_bytes is None:
+            continue
+
+        free_bytes = max(0.0, min(free_bytes, total_bytes))
+        used_bytes = max(0.0, total_bytes - free_bytes)
+
+        used_percent = (
+            used_bytes / total_bytes * 100.0
+            if total_bytes > 0
+            else None
+        )
+
+        drives.append(
+            {
+                "letter": volume,
+                "total_bytes": round(total_bytes),
+                "free_bytes": round(free_bytes),
+                "used_bytes": round(used_bytes),
+                "total_display": format_bytes(total_bytes),
+                "free_display": format_bytes(free_bytes),
+                "used_display": format_bytes(used_bytes),
+                "used_percent": (
+                    round(used_percent, 1)
+                    if used_percent is not None
+                    else None
+                ),
+                "display": (
+                    f"{format_bytes(free_bytes)} free of "
+                    f"{format_bytes(total_bytes)}"
+                ),
+            }
+        )
+
+    return drives
+
+
+def get_windows_data(device_id):
+    device = WINDOWS_DEVICES.get(device_id)
+
+    if device is None:
+        return None
+
+    job = device["job"]
+
+    up = first_value(f'up{{job="{job}"}}')
+
+    cpu_idle = first_value(
+        f'avg(rate(windows_cpu_time_total{{job="{job}",mode="idle"}}[5m]))'
+    )
+
+    cpu_percent = (
+        None
+        if cpu_idle is None
+        else max(
+            0.0,
+            min(100.0, (1.0 - cpu_idle) * 100.0),
+        )
+    )
+
+    memory_available = first_value(
+        f'windows_memory_available_bytes{{job="{job}"}}'
+    )
+
+    memory_total = first_value(
+        f'windows_memory_physical_total_bytes{{job="{job}"}}'
+    )
+
+    memory_used_gib = None
+    memory_total_gib = None
+    memory_percent = None
+    memory_display = "Unknown"
+
+    if (
+        memory_total is not None
+        and memory_available is not None
+        and memory_total > 0
+    ):
+        memory_used = max(
+            0.0,
+            memory_total - memory_available,
+        )
+
+        memory_used_gib = memory_used / (1024**3)
+        memory_total_gib = memory_total / (1024**3)
+        memory_percent = memory_used / memory_total * 100.0
+
+        memory_display = (
+            f"{memory_used_gib:.1f} / "
+            f"{memory_total_gib:.1f} GiB"
+        )
+
+    uptime_seconds = first_value(
+        f'time() - windows_system_boot_time_timestamp{{job="{job}"}}'
+    )
+
+    drives = get_windows_drives(job)
+
+    c_drive = next(
+        (
+            drive
+            for drive in drives
+            if drive["letter"] == "C:"
+        ),
+        None,
+    )
+
+    return {
+        "device": device["name"],
+        "description": device["description"],
+        "status": "Online" if up == 1 else "Offline",
+        "cpu": {
+            "percent": (
+                round(cpu_percent, 1)
+                if cpu_percent is not None
+                else None
+            ),
+            "display": (
+                f"{cpu_percent:.1f}%"
+                if cpu_percent is not None
+                else "Unknown"
+            ),
+        },
+        "memory": {
+            "used_gib": (
+                round(memory_used_gib, 1)
+                if memory_used_gib is not None
+                else None
+            ),
+            "total_gib": (
+                round(memory_total_gib, 1)
+                if memory_total_gib is not None
+                else None
+            ),
+            "percent": (
+                round(memory_percent, 1)
+                if memory_percent is not None
+                else None
+            ),
+            "display": memory_display,
+        },
+        "uptime": {
+            "seconds": (
+                round(uptime_seconds)
+                if uptime_seconds is not None
+                else None
+            ),
+            "display": format_uptime(uptime_seconds),
+        },
+        "drives": drives,
+
+        # Temporary backward-compatible field for the current frontend.
+        # This will be removed after the dynamic storage UI is installed.
+        "disk_free": (
+            c_drive["free_display"]
+            if c_drive is not None
+            else "Unknown"
+        ),
+    }
+
+===== ./models/__init__.py =====
+
+===== ./routes/__init__.py =====
+
+===== ./services/discovery.py =====
+from __future__ import annotations
+
+import docker
+
+from services.registry import get_service
+
+
+def discover_services():
+    client = docker.from_env()
+
+    discovered = []
+
+    for container in client.containers.list(all=True):
+        service = get_service(container.name)
+
+        if service is None:
+            discovered.append({
+                "container": container.name,
+                "title": container.name,
+                "description": "Unknown service",
+                "category": "Other",
+                "icon": "📦",
+                "status": container.status,
+                "image": (
+                    container.image.tags[0]
+                    if container.image.tags
+                    else "unknown"
+                ),
+                "url": None,
+                "registered": False,
+            })
+        else:
+            item = service.to_dict()
+            item["status"] = container.status
+            item["image"] = (
+                container.image.tags[0]
+                if container.image.tags
+                else "unknown"
+            )
+            item["registered"] = True
+            discovered.append(item)
+
+    return sorted(
+        discovered,
+        key=lambda x: (x["category"], x["title"].lower()),
+    )
+
+===== ./services/docker_engine.py =====
+from __future__ import annotations
+
+import docker
+
+
+def get_docker_client():
+    return docker.from_env()
+
+
+def get_containers():
+    client = get_docker_client()
+    containers = client.containers.list(all=True)
+
+    return [
+        {
+            "id": container.short_id,
+            "name": container.name,
+            "image": container.image.tags[0] if container.image.tags else "unknown",
+            "status": container.status,
+        }
+        for container in containers
+    ]
+
+===== ./services/groups.py =====
+from __future__ import annotations
+
+SERVICE_GROUPS = {
+    "Immich": [
+        "immich_server",
+        "immich_postgres",
+        "immich_redis",
+        "immich_machine_learning",
+    ],
+
+    "Monitoring": [
+        "prometheus",
+        "grafana",
+        "cadvisor",
+        "node-exporter",
+        "snmp-exporter",
+    ],
+}
+
+===== ./services/__init__.py =====
+
+===== ./services/models.py =====
+from __future__ import annotations
+
+from dataclasses import asdict, dataclass
+from typing import Optional
+
+
+@dataclass(frozen=True)
+class Service:
+    container: str
+    title: str
+    description: str
+    category: str
+    icon: str = "📦"
+    url: Optional[str] = None
+    homepage: bool = True
+
+    def to_dict(self) -> dict:
+        return asdict(self)
+
+===== ./services/overview.py =====
+from services.discovery import discover_services
+from devices.nuc import get_nuc_data
+
+
+def build_overview():
+    nuc = get_nuc_data()
+    services = discover_services()
+
+    running_services = [
+        service
+        for service in services
+        if service.get("status") == "running"
+    ]
+
+    registered_services = [
+        service
+        for service in services
+        if service.get("registered") is True
+    ]
+
+    filesystems = (
+        nuc
+        .get("storage", {})
+        .get("filesystems", [])
+    )
+
+    total_storage_bytes = sum(
+        filesystem.get("total_bytes", 0)
+        for filesystem in filesystems
+    )
+
+    used_storage_bytes = sum(
+        filesystem.get("used_bytes", 0)
+        for filesystem in filesystems
+    )
+
+    storage_percent = (
+        round(
+            used_storage_bytes
+            / total_storage_bytes
+            * 100,
+            1,
+        )
+        if total_storage_bytes
+        else 0
+    )
+
+    cpu_percent = (
+        nuc
+        .get("cpu", {})
+        .get("used_percent", 0)
+    )
+
+    alerts = []
+
+    for filesystem in filesystems:
+        used_percent = filesystem.get("used_percent", 0)
+
+        if used_percent >= 90:
+            alerts.append(
+                {
+                    "level": "critical",
+                    "message": (
+                        f'{filesystem.get("name", "Storage")} '
+                        f'is {used_percent}% full'
+                    ),
+                }
+            )
+        elif used_percent >= 80:
+            alerts.append(
+                {
+                    "level": "warning",
+                    "message": (
+                        f'{filesystem.get("name", "Storage")} '
+                        f'is {used_percent}% full'
+                    ),
+                }
+            )
+
+    stopped_services = [
+        service
+        for service in services
+        if service.get("status") != "running"
+    ]
+
+    if stopped_services:
+        alerts.append(
+            {
+                "level": "warning",
+                "message": (
+                    f"{len(stopped_services)} Docker "
+                    "container(s) are not running"
+                ),
+            }
+        )
+
+    if not alerts:
+        alerts.append(
+            {
+                "level": "healthy",
+                "message": "All monitored systems are operating normally",
+            }
+        )
+
+    health = "healthy"
+
+    if any(
+        alert.get("level") == "critical"
+        for alert in alerts
+    ):
+        health = "critical"
+    elif any(
+        alert.get("level") == "warning"
+        for alert in alerts
+    ):
+        health = "warning"
+
+    return {
+        "health": health,
+        "devices": {
+            "online": 1,
+            "total": 1,
+        },
+        "docker": {
+            "running": len(running_services),
+            "total": len(services),
+            "registered": len(registered_services),
+        },
+        "storage": {
+            "total_bytes": total_storage_bytes,
+            "used_bytes": used_storage_bytes,
+            "used_percent": storage_percent,
+        },
+        "cpu": {
+            "average_percent": cpu_percent,
+        },
+        "alerts": alerts,
+    }
+
+===== ./services/prometheus.py =====
+from __future__ import annotations
+
+import math
+import os
+from typing import Any
+
+import requests
+from config_loader import get_homeland_config
+
+
+_config = get_homeland_config()
+
+PROMETHEUS_URL = os.getenv(
+    "PROMETHEUS_URL",
+    _config["prometheus"]["url"],
+)
+
+
+def query(expression: str) -> list[dict[str, Any]]:
+    """Run an instant Prometheus query and return its result list."""
+    try:
+        response = requests.get(
+            f"{PROMETHEUS_URL}/api/v1/query",
+            params={"query": expression},
+            timeout=8,
+        )
+        response.raise_for_status()
+
+        payload = response.json()
+        if payload.get("status") != "success":
+            return []
+
+        return payload.get("data", {}).get("result", [])
+
+    except (requests.RequestException, ValueError, TypeError):
+        return []
+
+
+def values(expression: str) -> list[str]:
+    """Return only sample values from a Prometheus query."""
+    results = query(expression)
+
+    return [
+        result["value"][1]
+        for result in results
+        if isinstance(result.get("value"), list)
+        and len(result["value"]) >= 2
+    ]
+
+
+def first_value(expression: str) -> float | None:
+    """Return the first sample value as a float."""
+    results = query(expression)
+
+    if not results:
+        return None
+
+    try:
+        return float(results[0]["value"][1])
+    except (KeyError, IndexError, TypeError, ValueError):
+        return None
+
+
+def format_bytes(value: float | None) -> str:
+    if value is None or not math.isfinite(value):
+        return "Unknown"
+
+    gib = value / (1024**3)
+
+    if gib >= 1024:
+        return f"{gib / 1024:.1f} TiB"
+
+    return f"{gib:.1f} GiB"
+
+
+def format_uptime(seconds: float | None) -> str:
+    if seconds is None or not math.isfinite(seconds):
+        return "Unknown"
+
+    total_seconds = max(0, int(seconds))
+    days, remainder = divmod(total_seconds, 86400)
+    hours, remainder = divmod(remainder, 3600)
+    minutes = remainder // 60
+
+    if days:
+        return f"{days}d {hours}h"
+
+    if hours:
+        return f"{hours}h {minutes}m"
+
+    return f"{minutes}m"
+
+def query_vector(promql):
+    """
+    Execute a Prometheus instant vector query and return every result.
+
+    Returns:
+        [
+            {
+                "metric": {...},
+                "value": float
+            },
+            ...
+        ]
+    """
+    import requests
+
+    response = requests.get(
+        f"{PROMETHEUS_URL}/api/v1/query",
+        params={"query": promql},
+        timeout=10,
+    )
+
+    response.raise_for_status()
+
+    payload = response.json()
+
+    results = []
+
+    for item in payload.get("data", {}).get("result", []):
+        try:
+            value = float(item["value"][1])
+        except Exception:
+            value = None
+
+        results.append({
+            "metric": item.get("metric", {}),
+            "value": value,
+        })
+
+    return results
+
+===== ./services/registry.py =====
+from __future__ import annotations
+
+from services.models import Service
+
+
+SERVICES = {
+    "inventory-api": Service(
+        container="inventory-api",
+        title="Homeland",
+        description="Mission Control",
+        category="Core",
+        icon="🏠",
+        url="/",
+    ),
+    "jellyfin": Service(
+        container="jellyfin",
+        title="Jellyfin",
+        description="Movies, television, and media",
+        category="Media",
+        icon="🎬",
+        url="http://nuc-ubuntu:8096",
+    ),
+    "kavita": Service(
+        container="kavita",
+        title="Kavita",
+        description="Comics, manga, and books",
+        category="Media",
+        icon="📚",
+        url="http://nuc-ubuntu:5000",
+    ),
+    "immich_server": Service(
+        container="immich_server",
+        title="Immich",
+        description="Photo and video library",
+        category="Media",
+        icon="📸",
+        url="http://nuc-ubuntu:2283",
+    ),
+    "grafana": Service(
+        container="grafana",
+        title="Grafana",
+        description="Monitoring dashboards",
+        category="Monitoring",
+        icon="📊",
+        url="http://nuc-ubuntu:3000",
+    ),
+    "prometheus": Service(
+        container="prometheus",
+        title="Prometheus",
+        description="Metrics collection",
+        category="Monitoring",
+        icon="📈",
+        url="http://nuc-ubuntu:9090",
+    ),
+    "uptime-kuma": Service(
+        container="uptime-kuma",
+        title="Uptime Kuma",
+        description="Service uptime monitoring",
+        category="Monitoring",
+        icon="🟢",
+        url="http://nuc-ubuntu:3001",
+    ),
+    "portainer": Service(
+        container="portainer",
+        title="Portainer",
+        description="Docker administration",
+        category="Infrastructure",
+        icon="🐳",
+        url="https://nuc-ubuntu:9443",
+    ),
+}
+
+
+def get_service(container_name: str) -> Service | None:
+    return SERVICES.get(container_name)
+
+===== ./services/service_registry.py =====
+from __future__ import annotations
+
+import docker
+
+from services.service_registry import SERVICES
+
+
+def get_docker_client():
+    return docker.from_env()
+
+
+def get_containers():
+    client = get_docker_client()
+    containers = client.containers.list(all=True)
+
+    results = []
+
+    for container in containers:
+        registry = SERVICES.get(container.name, {})
+
+        results.append(
+            {
+                "id": container.short_id,
+                "name": container.name,
+                "image": (
+                    container.image.tags[0]
+                    if container.image.tags
+                    else "unknown"
+                ),
+                "status": container.status,
+                "title": registry.get("title", container.name),
+                "description": registry.get(
+                    "description",
+                    "Docker container",
+                ),
+                "icon": registry.get("icon", "📦"),
+                "category": registry.get("category", "Other"),
+                "url": registry.get("url"),
+            }
+        )
+
+    return sorted(
+        results,
+        key=lambda item: (
+            item["category"],
+            item["title"].lower(),
+        ),
+    )
+
+===== ./tools/engine/__init__.py =====
+"""Homeland Development Kit engine."""
+
+HDK_VERSION = "0.2.0"
+
+===== ./tools/engine/logger.py =====
+"""Small dependency-free terminal output helpers."""
+
+import os
+import sys
+
+
+USE_COLOR = (
+    sys.stdout.isatty()
+    and os.environ.get("NO_COLOR") is None
+)
+
+
+def _paint(code: str, text: str) -> str:
+    if not USE_COLOR:
+        return text
+
+    return f"\033[{code}m{text}\033[0m"
+
+
+def heading(text: str) -> None:
+    print(_paint("1;36", f"===== {text} ====="))
+
+
+def success(text: str) -> None:
+    print(_paint("32", f"✓ {text}"))
+
+
+def warning(text: str) -> None:
+    print(_paint("33", f"WARNING: {text}"))
+
+
+def error(text: str) -> None:
+    print(_paint("31", f"ERROR: {text}"))
+
+
+def info(text: str) -> None:
+    print(text)
+
+===== ./tools/engine/manifest.py =====
+"""Manifest loading for Homeland modules."""
+
+from __future__ import annotations
+
+import json
+from dataclasses import dataclass, field
+from pathlib import Path
+
+from .paths import PATCH_ROOT
+
+
+@dataclass
+class Manifest:
+    name: str
+    display_name: str
+    version: str
+    description: str
+    author: str = ""
+    category: str = "General"
+    dependencies: list[str] = field(default_factory=list)
+    conflicts: list[str] = field(default_factory=list)
+    requires_restart: bool = False
+
+    @classmethod
+    def load(cls, package_root: Path):
+        manifest_path = package_root / "manifest.json"
+
+        if not manifest_path.exists():
+            raise FileNotFoundError(manifest_path)
+
+        data = json.loads(manifest_path.read_text())
+
+        return cls(
+            name=data["name"],
+            display_name=data.get("display_name", data["name"]),
+            version=data["version"],
+            description=data.get("description", ""),
+            author=data.get("author", ""),
+            category=data.get("category", "General"),
+            dependencies=data.get("dependencies", []),
+            conflicts=data.get("conflicts", []),
+            requires_restart=data.get("requires_restart", False),
+        )
+
+
+def discover():
+    manifests = []
+
+    if not PATCH_ROOT.exists():
+        return manifests
+
+    for directory in sorted(PATCH_ROOT.iterdir()):
+        if not directory.is_dir():
+            continue
+
+        if not (directory / "manifest.json").exists():
+            continue
+
+        manifests.append(Manifest.load(directory))
+
+    return manifests
+
+===== ./tools/engine/paths.py =====
+"""Central filesystem paths used by the Homeland Development Kit."""
+
+from pathlib import Path
+
+
+TOOLS_ROOT = Path(__file__).resolve().parents[1]
+PROJECT_ROOT = TOOLS_ROOT.parent
+
+ENGINE_ROOT = TOOLS_ROOT / "engine"
+PATCH_ROOT = TOOLS_ROOT / "patches"
+BACKUP_ROOT = PROJECT_ROOT / "backups"
+
+CONFIG_PATH = TOOLS_ROOT / "config.json"
+REGISTRY_PATH = TOOLS_ROOT / "installed.json"
+COMPOSE_PATH = PROJECT_ROOT / "compose.yml"
+
+
+def ensure_hdk_directories() -> None:
+    """Create directories required by the HDK."""
+
+    PATCH_ROOT.mkdir(parents=True, exist_ok=True)
+    BACKUP_ROOT.mkdir(parents=True, exist_ok=True)
+
+===== ./tools/engine/registry.py =====
+"""Installed Homeland module registry."""
+
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+from .paths import REGISTRY_PATH
+
+
+DEFAULT_REGISTRY = {
+    "hdk_version": "0.2.0",
+    "modules": {}
+}
+
+
+class Registry:
+    def __init__(self):
+        self.path = REGISTRY_PATH
+
+        if self.path.exists():
+            self.data = json.loads(self.path.read_text())
+        else:
+            self.data = DEFAULT_REGISTRY.copy()
+
+    def save(self):
+        self.path.write_text(
+            json.dumps(self.data, indent=2) + "\n"
+        )
+
+    def modules(self):
+        return self.data["modules"]
+
+    def is_installed(self, name):
+        return name in self.modules()
+
+    def install(self, name, version):
+        self.modules()[name] = {
+            "version": version
+        }
+        self.save()
+
+    def uninstall(self, name):
+        self.modules().pop(name, None)
+        self.save()
+
+===== ./tools/engine/status.py =====
+"""HDK status screen."""
+from . import HDK_VERSION
+from .manifest import discover
+from .registry import Registry
+from .ui import footer, show_modules, title
+
+def show_status():
+    registry = Registry()
+    installed = []
+    available = []
+    for manifest in discover():
+        label = f"{manifest.display_name} ({manifest.version})"
+        target = installed if registry.is_installed(manifest.name) else available
+        target.append(label)
+    title(f"Homeland Development Kit v{HDK_VERSION}")
+    print(f"Installed modules : {len(installed)}")
+    print(f"Available modules : {len(available)}")
+    show_modules(installed, available)
+    footer()
+    return True
+
+===== ./tools/engine/ui.py =====
+"""Simple Homeland terminal interface."""
+
+from .logger import heading
+
+
+WIDTH = 60
+
+
+def line():
+    print("─" * WIDTH)
+
+
+def title(text):
+    line()
+    heading(text.center(WIDTH))
+    line()
+
+
+def section(text):
+    print()
+    print(text)
+    print("-" * len(text))
+
+
+def show_modules(installed, available):
+    section("Installed Modules")
+
+    if not installed:
+        print("  (none)")
+    else:
+        for module in installed:
+            print(f"  ✓ {module}")
+
+    section("Available Modules")
+
+    if not available:
+        print("  (none)")
+    else:
+        for module in available:
+            print(f"  ○ {module}")
+
+
+def footer():
+    print()
+    line()
+    print("[L]ist  [I]nstall  [U]ninstall  [V]erify  [Q]uit")
+    line()
+
+===== ./tools/homeland_builder.py =====
+#!/usr/bin/env python3
+
+from __future__ import annotations
+
+import argparse
+import importlib.util
+import json
+import shutil
+import subprocess
+import sys
+import time
+import urllib.request
+from datetime import datetime
+from pathlib import Path
+
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+TOOLS_ROOT = PROJECT_ROOT / "tools"
+PATCH_ROOT = TOOLS_ROOT / "patches"
+BACKUP_ROOT = PROJECT_ROOT / "backups"
+STATE_FILE = TOOLS_ROOT / "installed_patches.json"
+HOMELAND_URL = "http://localhost:8088/"
+
+IMPORTANT_PATHS = [
+    "app.py",
+    "templates",
+    "static",
+    "devices",
+    "services",
+    "docker-compose.yml",
+    "docker-compose.yaml",
+    "compose.yml",
+    "compose.yaml",
+]
+
+
+def heading(message: str) -> None:
+    print(f"\n===== {message.upper()} =====")
+
+
+def run(command: list[str], check: bool = True):
+    print("$", " ".join(command))
+    return subprocess.run(
+        command,
+        cwd=PROJECT_ROOT,
+        text=True,
+        check=check,
+    )
+
+
+def find_compose_file() -> Path | None:
+    for name in (
+        "docker-compose.yml",
+        "docker-compose.yaml",
+        "compose.yml",
+        "compose.yaml",
+    ):
+        path = PROJECT_ROOT / name
+        if path.exists():
+            return path
+
+    return None
+
+
+def check_project() -> bool:
+    heading("Project check")
+
+    required = [
+        PROJECT_ROOT / "app.py",
+        PROJECT_ROOT / "templates",
+        PROJECT_ROOT / "static",
+        PATCH_ROOT,
+    ]
+
+    missing = [
+        str(path.relative_to(PROJECT_ROOT))
+        for path in required
+        if not path.exists()
+    ]
+
+    if missing:
+        for item in missing:
+            print(f"Missing: {item}")
+        return False
+
+    compose = find_compose_file()
+
+    if compose is None:
+        print("Compose file: NOT FOUND")
+        return False
+
+    print(f"Project root: {PROJECT_ROOT}")
+    print(f"Compose file: {compose.name}")
+    print("Project structure: OK")
+    return True
+
+
+def create_backup(label: str = "manual") -> Path:
+    heading("Creating backup")
+
+    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    destination = BACKUP_ROOT / f"{timestamp}-{label}"
+    destination.mkdir(parents=True, exist_ok=False)
+
+    for relative_name in IMPORTANT_PATHS:
+        source = PROJECT_ROOT / relative_name
+
+        if not source.exists():
+            continue
+
+        target = destination / relative_name
+
+        if source.is_dir():
+            shutil.copytree(
+                source,
+                target,
+                ignore=shutil.ignore_patterns(
+                    "__pycache__",
+                    "*.pyc",
+                ),
+            )
+        else:
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(source, target)
+
+        print(f"Backed up: {relative_name}")
+
+    print(f"Backup created: {destination}")
+    return destination
+
+
+def load_state() -> dict:
+    if not STATE_FILE.exists():
+        return {"installed": {}}
+
+    try:
+        data = json.loads(STATE_FILE.read_text())
+    except (json.JSONDecodeError, OSError):
+        return {"installed": {}}
+
+    if not isinstance(data, dict):
+        return {"installed": {}}
+
+    data.setdefault("installed", {})
+    return data
+
+
+def save_state(state: dict) -> None:
+    STATE_FILE.write_text(
+        json.dumps(state, indent=2, sort_keys=True) + "\n"
+    )
+
+
+def discover_patches() -> dict[str, Path]:
+    patches = {}
+
+    for path in sorted(PATCH_ROOT.glob("*.py")):
+        if path.name.startswith("_"):
+            continue
+
+        patches[path.stem] = path
+
+    return patches
+
+
+def load_patch(name: str):
+    patches = discover_patches()
+
+    if name not in patches:
+        available = ", ".join(patches) or "none"
+        raise RuntimeError(
+            f"Unknown patch: {name}. Available patches: {available}"
+        )
+
+    path = patches[name]
+    module_name = f"homeland_patch_{name}"
+
+    spec = importlib.util.spec_from_file_location(
+        module_name,
+        path,
+    )
+
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"Unable to load patch: {name}")
+
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def list_patches() -> bool:
+    heading("Available patches")
+
+    patches = discover_patches()
+    state = load_state()
+    installed = state["installed"]
+
+    if not patches:
+        print("No feature patches found.")
+        print(f"Add patch modules to: {PATCH_ROOT}")
+        return True
+
+    for name in patches:
+        status = "INSTALLED" if name in installed else "available"
+
+        try:
+            module = load_patch(name)
+            description = getattr(
+                module,
+                "DESCRIPTION",
+                "No description provided.",
+            )
+        except Exception as error:
+            description = f"LOAD ERROR: {error}"
+
+        print(f"{name:<28} {status:<10} {description}")
+
+    return True
+
+
+def install_patch(name: str) -> bool:
+    heading(f"Installing {name}")
+
+    state = load_state()
+
+    if name in state["installed"]:
+        print(f"Patch already installed: {name}")
+        return True
+
+    module = load_patch(name)
+
+    if not hasattr(module, "install"):
+        print("Patch does not define install(project_root).")
+        return False
+
+    backup = create_backup(f"before-{name}")
+
+    try:
+        result = module.install(PROJECT_ROOT)
+
+        if result is False:
+            raise RuntimeError("Patch returned failure.")
+
+        state["installed"][name] = {
+            "installed_at": datetime.now().isoformat(timespec="seconds"),
+            "backup": str(backup.relative_to(PROJECT_ROOT)),
+        }
+
+        save_state(state)
+        print(f"Patch installed: {name}")
+
+===== ./tools/patches/__init__.py =====
+"""Installable Homeland feature patches."""
+
+===== ./tools/patches/phase2_overview/feature.py =====
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+
+PACKAGE_ROOT = Path(__file__).resolve().parent
+MANIFEST_PATH = PACKAGE_ROOT / "manifest.json"
+
+MARKER = "<!-- HOMELAND GLOBAL OVERVIEW -->"
+DEVICE_GRID = '<section class="device-grid">'
+
+
+def load_manifest() -> dict:
+    return json.loads(MANIFEST_PATH.read_text())
+
+
+def asset_path(name: str) -> Path:
+    manifest = load_manifest()
+    relative_path = manifest["files"][name]
+    return PACKAGE_ROOT / relative_path
+
+
+def install(project_root: Path) -> bool:
+    dashboard = project_root / "templates" / "dashboard.html"
+    html_asset = asset_path("template")
+
+    text = dashboard.read_text()
+
+    if MARKER in text:
+        print("Global Overview HTML already exists.")
+        return True
+
+    if DEVICE_GRID not in text:
+        raise RuntimeError(
+            'Could not find <section class="device-grid">.'
+        )
+
+    overview_html = html_asset.read_text().strip()
+
+    text = text.replace(
+        DEVICE_GRID,
+        overview_html + "\n\n" + DEVICE_GRID,
+        1,
+    )
+
+    dashboard.write_text(text)
+    print("Global Overview HTML installed.")
+    return True
+
+
+def uninstall(project_root: Path) -> bool:
+    dashboard = project_root / "templates" / "dashboard.html"
+    text = dashboard.read_text()
+
+    if MARKER not in text:
+        print("Global Overview HTML is not present.")
+        return True
+
+    start = text.index(MARKER)
+    section_start = text.index("<section", start)
+
+    depth = 0
+    position = section_start
+
+    while position < len(text):
+        next_open = text.find("<section", position)
+        next_close = text.find("</section>", position)
+
+        if next_close == -1:
+            raise RuntimeError(
+                "Could not locate the end of Global Overview."
+            )
+
+        if next_open != -1 and next_open < next_close:
+            depth += 1
+            position = next_open + len("<section")
+            continue
+
+        depth -= 1
+        position = next_close + len("</section>")
+
+        if depth == 0:
+            break
+
+    cleaned = text[:start] + text[position:]
+    dashboard.write_text(cleaned)
+
+    print("Global Overview HTML removed.")
+    return True
+
+===== ./tools/patches/phase2_overview.py =====
+"""Compatibility loader for the structured Phase 2 Overview patch."""
+
+from __future__ import annotations
+
+import importlib.util
+import json
+from pathlib import Path
+
+
+PACKAGE_ROOT = Path(__file__).with_suffix("")
+MANIFEST_PATH = PACKAGE_ROOT / "manifest.json"
+FEATURE_PATH = PACKAGE_ROOT / "feature.py"
+
+_manifest = json.loads(MANIFEST_PATH.read_text())
+
+DESCRIPTION = _manifest["description"]
+VERSION = _manifest["version"]
+
+_spec = importlib.util.spec_from_file_location(
+    "homeland_phase2_overview_feature",
+    FEATURE_PATH,
+)
+
+if _spec is None or _spec.loader is None:
+    raise RuntimeError(
+        "Unable to load structured phase2_overview feature."
+    )
+
+_feature = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(_feature)
+
+install = _feature.install
+uninstall = _feature.uninstall
+
+===== YAML FILES =====
+
+===== ./compose.yml =====
+services:
+  inventory-api:
+    build: .
+    container_name: inventory-api
+    ports:
+      - "8088:8088"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    restart: unless-stopped
+
+===== ./config/alerts.yml =====
+
+===== ./config/devices.yml =====
+
+===== ./config/homeland.yml =====
+homeland:
+  name: Homeland
+  environment: production
+
+server:
+  host: 0.0.0.0
+  port: 8088
+  debug: false
+
+monitoring:
+  prometheus:
+    url: http://192.168.5.134:9090
+    timeout_seconds: 5
+
+refresh:
+  overview_seconds: 30
+  devices_seconds: 30
+  services_seconds: 20
+
+===== ./config/services.yml =====
+
+===== DOCKER COMPOSE FILES =====
+
+===== ./compose.yml =====
+services:
+  inventory-api:
+    build: .
+    container_name: inventory-api
+    ports:
+      - "8088:8088"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    restart: unless-stopped
+
+===== REQUIREMENTS =====
+flask==3.1.1
+requests==2.32.4
+jinja2>=3.1,<4
+docker
+PyYAML==6.0.2
+
+===== GIT STATUS =====
+ M config/homeland.yml
+?? config/alerts.yml
+?? config/devices.yml
+?? config/services.yml
+?? core/
+?? homeland-audit.txt
+
+===== RECENT COMMITS =====
+e8c42ad Add Homeland config foundation
+398e5a0 Add Homeland dashboard project
+c0b8f06 Add live device network map
+80ae8ea Add Homepage API integrations and Uptime Kuma monitoring
+5d3c564 Update server and services documentation
+6c92114 Fix Kavita persistent config and library mounts
+d85081d Polish Homepage dashboard
+63086e1 Configure Homepage service links
+491d438 Add Homepage dashboard service
+b12f410 Add homelab overview
+ef2b603 Document storage layout and current system configs
+e5c5cb5 Initial homelab documentation structure
