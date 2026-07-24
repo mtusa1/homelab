@@ -1,0 +1,63 @@
+inventory-api:
+  container: inventory-api
+  title: Homeland
+  description: Mission Control
+  category: Core
+  icon: "🏠"
+  url: /
+
+jellyfin:
+  container: jellyfin
+  title: Jellyfin
+  description: Movies, television, and media
+  category: Media
+  icon: "🎬"
+  url: http://nuc-ubuntu:8096
+
+kavita:
+  container: kavita
+  title: Kavita
+  description: Comics, manga, and books
+  category: Media
+  icon: "📚"
+  url: http://nuc-ubuntu:5000
+
+immich_server:
+  container: immich_server
+  title: Immich
+  description: Photo and video library
+  category: Media
+  icon: "📸"
+  url: http://nuc-ubuntu:2283
+
+grafana:
+  container: grafana
+  title: Grafana
+  description: Monitoring dashboards
+  category: Monitoring
+  icon: "📊"
+  url: http://nuc-ubuntu:3000
+
+prometheus:
+  container: prometheus
+  title: Prometheus
+  description: Metrics collection
+  category: Monitoring
+  icon: "📈"
+  url: http://nuc-ubuntu:9090
+
+uptime-kuma:
+  container: uptime-kuma
+  title: Uptime Kuma
+  description: Service uptime monitoring
+  category: Monitoring
+  icon: "🟢"
+  url: http://nuc-ubuntu:3001
+
+portainer:
+  container: portainer
+  title: Portainer
+  description: Docker administration
+  category: Infrastructure
+  icon: "🐳"
+  url: https://nuc-ubuntu:9443
