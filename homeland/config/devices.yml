@@ -16,20 +16,20 @@ optiplex:
   monitor: prometheus
   enabled: false
 
-main-windows:
-  id: main-windows
-  name: Main Windows PC
+main-desktop:
+  id: main-desktop
+  name: Main Desktop
   category: workstation
-  hostname: main-windows
+  hostname: main-desktop
   operating_system: Windows 11
   monitor: prometheus
   enabled: true
 
-secondary-windows:
-  id: secondary-windows
-  name: Secondary Windows PC
+windows-workstation:
+  id: windows-workstation
+  name: Windows Workstation
   category: workstation
-  hostname: secondary-windows
+  hostname: windows-workstation
   operating_system: Windows 11
   monitor: prometheus
   enabled: true
