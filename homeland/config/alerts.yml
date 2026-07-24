@@ -1,0 +1,23 @@
+storage:
+  warning_percent: 80
+  critical_percent: 90
+
+cpu:
+  warning_percent: 85
+  critical_percent: 95
+
+memory:
+  warning_percent: 85
+  critical_percent: 95
+
+devices:
+  alert_when_offline: true
+  alert_when_unknown: false
+
+docker:
+  alert_when_registered_service_stopped: true
+
+synology:
+  raid_warning: true
+  disk_temperature_warning_celsius: 45
+  disk_temperature_critical_celsius: 55
