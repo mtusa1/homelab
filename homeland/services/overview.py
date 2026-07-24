@@ -1,5 +1,6 @@
 from services.discovery import discover_services
 from devices.nuc import get_nuc_data
+from core.device_manager import device_manager
 
 
 def build_overview():
@@ -118,8 +119,14 @@ def build_overview():
     return {
         "health": health,
         "devices": {
-            "online": 1,
-            "total": 1,
+            "online": len(
+                [
+                    device
+                    for device in device_manager.get_enabled()
+                    if device.monitor != "none"
+                ]
+            ),
+            "total": device_manager.count_total(),
         },
         "docker": {
             "running": len(running_services),

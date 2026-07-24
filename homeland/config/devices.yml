@@ -1,0 +1,71 @@
+nuc:
+  id: nuc
+  name: Ubuntu NUC
+  category: server
+  hostname: nuc-ubuntu
+  operating_system: Ubuntu 24.04
+  monitor: prometheus
+  enabled: true
+
+optiplex:
+  id: optiplex
+  name: Homeland OptiPlex
+  category: server
+  hostname: optiplex
+  operating_system: Ubuntu 24.04
+  monitor: prometheus
+  enabled: false
+
+main-windows:
+  id: main-windows
+  name: Main Windows PC
+  category: workstation
+  hostname: main-windows
+  operating_system: Windows 11
+  monitor: prometheus
+  enabled: true
+
+secondary-windows:
+  id: secondary-windows
+  name: Secondary Windows PC
+  category: workstation
+  hostname: secondary-windows
+  operating_system: Windows 11
+  monitor: prometheus
+  enabled: true
+
+synology:
+  id: synology
+  name: Synology DS925+
+  category: nas
+  hostname: synology
+  operating_system: DSM
+  monitor: synology-api
+  enabled: true
+
+asustor:
+  id: asustor
+  name: Asustor NAS
+  category: nas
+  hostname: asustor
+  operating_system: ADM
+  monitor: none
+  enabled: true
+
+surface:
+  id: surface
+  name: Surface
+  category: client
+  hostname: greysurface
+  operating_system: Windows
+  monitor: none
+  enabled: true
+
+lenovo-tablet:
+  id: lenovo-tablet
+  name: Lenovo Tablet
+  category: client
+  hostname: lenovo-tablet
+  operating_system: Android
+  monitor: none
+  enabled: true
