@@ -241,3 +241,37 @@ def get_linux_data(
         },
         "uptime": format_uptime(uptime),
     }
+
+
+LINUX_HOSTS = {
+    "optiplex": {
+        "job": "homeland-optiplex",
+        "description": "Primary Homeland Server",
+        "filesystems": (
+            LinuxFilesystem(
+                name="Ubuntu Root",
+                mountpoint="/",
+            ),
+        ),
+        "container_job": None,
+    },
+}
+
+
+def get_linux_device_data(device_id: str) -> dict | None:
+    """
+    Return metrics for an approved Linux device.
+
+    Device IDs must exist in LINUX_HOSTS. Prometheus job names cannot be
+    supplied directly through the route.
+    """
+    host = LINUX_HOSTS.get(device_id)
+
+    if host is None:
+        return None
+
+    return get_linux_data(
+        job=host["job"],
+        filesystems=host["filesystems"],
+        container_job=host["container_job"],
+    )

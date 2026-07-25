@@ -2,6 +2,11 @@ from __future__ import annotations
 
 from flask import Blueprint, jsonify, render_template
 
+from core.device_manager import device_manager
+from devices.linux import (
+    LINUX_HOSTS,
+    get_linux_device_data,
+)
 from devices.nuc import get_nuc_data
 from devices.synology import (
     get_details as get_synology_details,
@@ -34,6 +39,45 @@ def nuc_device_api():
 @devices_bp.get("/device/nuc")
 def nuc_page():
     return render_template("nuc.html")
+
+
+@devices_bp.get("/device/linux/<device_id>")
+def linux_page(device_id):
+    if device_id not in LINUX_HOSTS:
+        return "Unknown device", 404
+
+    device = device_manager.get(device_id)
+
+    if device is None or not device.enabled:
+        return "Unknown device", 404
+
+    host = LINUX_HOSTS[device_id]
+
+    return render_template(
+        "linux.html",
+        device_name=device.name,
+        device_description=host["description"],
+        device_id=device_id,
+        api_url=f"/api/device/linux/{device_id}",
+    )
+
+
+@devices_bp.get("/api/device/linux/<device_id>")
+def linux_device_api(device_id):
+    if device_id not in LINUX_HOSTS:
+        return jsonify(error="Unknown device"), 404
+
+    device = device_manager.get(device_id)
+
+    if device is None or not device.enabled:
+        return jsonify(error="Unknown device"), 404
+
+    data = get_linux_device_data(device_id)
+
+    if data is None:
+        return jsonify(error="Unknown device"), 404
+
+    return jsonify(data)
 
 
 @devices_bp.get("/device/windows/<device_id>")
