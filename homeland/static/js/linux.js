@@ -9,8 +9,11 @@ const {
 async function refreshLinuxDevice() {
     try {
         const config = window.HomelandLinuxDevice || {};
+
         if (!config.apiUrl) {
-            throw new Error("Linux device API URL is missing.");
+            throw new Error(
+                "Linux device API URL is missing."
+            );
         }
 
         const response = await fetch(config.apiUrl, {

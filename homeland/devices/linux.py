@@ -1,21 +1,20 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Iterable
+from typing import Any, Iterable
 
+from core.config import config
+from core.device_manager import device_manager
 from services.prometheus import first_value, format_bytes, format_uptime
 
 
 @dataclass(frozen=True)
 class LinuxFilesystem:
-    """A filesystem exposed by a Linux node_exporter target."""
-
     name: str
     mountpoint: str
 
 
 def _selector(job: str, extra: str = "") -> str:
-    """Build a Prometheus label selector for one Linux host."""
     labels = [f'job="{job}"']
 
     if extra:
@@ -29,7 +28,7 @@ def get_filesystem_data(
     job: str,
     name: str,
     mountpoint: str,
-) -> dict:
+) -> dict[str, Any]:
     selector = _selector(
         job,
         (
@@ -76,21 +75,7 @@ def get_linux_data(
     job: str,
     filesystems: Iterable[LinuxFilesystem],
     container_job: str | None = None,
-) -> dict:
-    """
-    Collect common Linux host metrics from Prometheus.
-
-    Parameters:
-        job:
-            Prometheus node_exporter job name.
-
-        filesystems:
-            Filesystems that should appear in the host response.
-
-        container_job:
-            Optional cAdvisor Prometheus job. Container counts are omitted
-            when this is not provided.
-    """
+) -> dict[str, Any]:
     cpu_idle = first_value(
         (
             "avg(rate("
@@ -172,13 +157,11 @@ def get_linux_data(
         for filesystem in filesystems
     ]
 
+    status = "Online" if cpu_idle is not None else "Unknown"
+
     return {
         "summary": {
-            "status": (
-                "Online"
-                if cpu_idle is not None
-                else "Unknown"
-            ),
+            "status": status,
             "cpu": (
                 f"{cpu_percent:.1f}%"
                 if cpu_percent is not None
@@ -243,35 +226,79 @@ def get_linux_data(
     }
 
 
-LINUX_HOSTS = {
-    "optiplex": {
-        "job": "homeland-optiplex",
-        "description": "Primary Homeland Server",
-        "filesystems": (
+def get_linux_device_config(
+    device_id: str,
+) -> dict[str, Any] | None:
+    """
+    Return the approved Linux configuration for a registered device.
+
+    Prometheus job names are read only from devices.yml and are never
+    accepted directly from a URL.
+    """
+    device = device_manager.get(device_id)
+
+    if device is None or not device.enabled:
+        return None
+
+    raw_devices = config.load("devices")
+    raw_device = raw_devices.get(device_id, {})
+    linux_config = raw_device.get("linux")
+
+    if not isinstance(linux_config, dict):
+        return None
+
+    prometheus_job = linux_config.get("prometheus_job")
+
+    if not prometheus_job:
+        return None
+
+    raw_filesystems = linux_config.get("filesystems", [])
+
+    filesystems = []
+
+    for filesystem in raw_filesystems:
+        if not isinstance(filesystem, dict):
+            continue
+
+        name = filesystem.get("name")
+        mountpoint = filesystem.get("mountpoint")
+
+        if not name or not mountpoint:
+            continue
+
+        filesystems.append(
             LinuxFilesystem(
-                name="Ubuntu Root",
-                mountpoint="/",
-            ),
+                name=str(name),
+                mountpoint=str(mountpoint),
+            )
+        )
+
+    return {
+        "device": device,
+        "description": linux_config.get(
+            "description",
+            "Linux Server",
         ),
-        "container_job": None,
-    },
-}
+        "prometheus_job": str(prometheus_job),
+        "container_job": (
+            str(linux_config["container_job"])
+            if linux_config.get("container_job")
+            else None
+        ),
+        "filesystems": tuple(filesystems),
+    }
 
 
-def get_linux_device_data(device_id: str) -> dict | None:
-    """
-    Return metrics for an approved Linux device.
+def get_linux_device_data(
+    device_id: str,
+) -> dict[str, Any] | None:
+    linux_config = get_linux_device_config(device_id)
 
-    Device IDs must exist in LINUX_HOSTS. Prometheus job names cannot be
-    supplied directly through the route.
-    """
-    host = LINUX_HOSTS.get(device_id)
-
-    if host is None:
+    if linux_config is None:
         return None
 
     return get_linux_data(
-        job=host["job"],
-        filesystems=host["filesystems"],
-        container_job=host["container_job"],
+        job=linux_config["prometheus_job"],
+        filesystems=linux_config["filesystems"],
+        container_job=linux_config["container_job"],
     )

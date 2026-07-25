@@ -6,6 +6,19 @@ nuc:
   operating_system: Ubuntu 24.04
   monitor: prometheus
   enabled: true
+  linux:
+    description: Primary Docker and Storage Server
+    prometheus_job: nuc
+    container_job: docker
+    filesystems:
+      - name: Ubuntu Root
+        mountpoint: /
+      - name: Media
+        mountpoint: /media/tusa/Media
+      - name: Storage
+        mountpoint: /media/tusa/Storage
+      - name: Data
+        mountpoint: /media/tusa/Data
 
 optiplex:
   id: optiplex
@@ -15,6 +28,13 @@ optiplex:
   operating_system: Ubuntu
   monitor: prometheus
   enabled: true
+  linux:
+    description: Primary Homeland Application Server
+    prometheus_job: homeland-optiplex
+    container_job:
+    filesystems:
+      - name: Ubuntu Root
+        mountpoint: /
 
 main-desktop:
   id: main-desktop

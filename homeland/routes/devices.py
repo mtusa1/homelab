@@ -4,7 +4,7 @@ from flask import Blueprint, jsonify, render_template
 
 from core.device_manager import device_manager
 from devices.linux import (
-    LINUX_HOSTS,
+    get_linux_device_config,
     get_linux_device_data,
 )
 from devices.nuc import get_nuc_data
@@ -43,20 +43,17 @@ def nuc_page():
 
 @devices_bp.get("/device/linux/<device_id>")
 def linux_page(device_id):
-    if device_id not in LINUX_HOSTS:
+    linux_config = get_linux_device_config(device_id)
+
+    if linux_config is None:
         return "Unknown device", 404
 
-    device = device_manager.get(device_id)
-
-    if device is None or not device.enabled:
-        return "Unknown device", 404
-
-    host = LINUX_HOSTS[device_id]
+    device = linux_config["device"]
 
     return render_template(
         "linux.html",
         device_name=device.name,
-        device_description=host["description"],
+        device_description=linux_config["description"],
         device_id=device_id,
         api_url=f"/api/device/linux/{device_id}",
     )
@@ -64,14 +61,6 @@ def linux_page(device_id):
 
 @devices_bp.get("/api/device/linux/<device_id>")
 def linux_device_api(device_id):
-    if device_id not in LINUX_HOSTS:
-        return jsonify(error="Unknown device"), 404
-
-    device = device_manager.get(device_id)
-
-    if device is None or not device.enabled:
-        return jsonify(error="Unknown device"), 404
-
     data = get_linux_device_data(device_id)
 
     if data is None:
