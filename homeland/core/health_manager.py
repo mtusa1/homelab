@@ -16,6 +16,7 @@ HEALTH_CACHE_TTL_SECONDS = 30.0
 
 PROMETHEUS_JOBS = {
     "nuc": "nuc",
+    "optiplex": "homeland-optiplex",
     "main-desktop": "windows-main-desktop",
     "windows-workstation": "windows-workstation",
     "synology": "synology-snmp",

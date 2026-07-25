@@ -11,10 +11,10 @@ optiplex:
   id: optiplex
   name: Homeland OptiPlex
   category: server
-  hostname: optiplex
-  operating_system: Ubuntu 24.04
+  hostname: homeland
+  operating_system: Ubuntu
   monitor: prometheus
-  enabled: false
+  enabled: true
 
 main-desktop:
   id: main-desktop
