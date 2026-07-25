@@ -1,3 +1,7 @@
+from copy import deepcopy
+from threading import Lock
+from time import monotonic
+
 from core.alert_manager import alert_manager
 from core.device_manager import device_manager
 from core.health_manager import health_manager
@@ -5,7 +9,7 @@ from devices.nuc import get_nuc_data
 from services.discovery import discover_services
 
 
-def build_overview():
+def _build_overview_uncached():
     nuc = get_nuc_data()
     services = discover_services()
 
@@ -110,3 +114,61 @@ def build_overview():
         },
         "alerts": alert_manager.as_dicts(alerts),
     }
+
+
+OVERVIEW_CACHE_TTL_SECONDS = 30.0
+_overview_cache = None
+_overview_cache_time = 0.0
+_overview_cache_lock = Lock()
+
+
+def build_overview(*, force_refresh: bool = False):
+    """Return a briefly cached overview snapshot.
+
+    The dashboard polls this endpoint frequently. Caching prevents each
+    browser request from repeating all Prometheus and Docker queries.
+    """
+    global _overview_cache
+    global _overview_cache_time
+
+    now = monotonic()
+
+    if (
+        not force_refresh
+        and _overview_cache is not None
+        and now - _overview_cache_time < OVERVIEW_CACHE_TTL_SECONDS
+    ):
+        return deepcopy(_overview_cache)
+
+    with _overview_cache_lock:
+        now = monotonic()
+
+        if (
+            not force_refresh
+            and _overview_cache is not None
+            and now - _overview_cache_time < OVERVIEW_CACHE_TTL_SECONDS
+        ):
+            return deepcopy(_overview_cache)
+
+        try:
+            refreshed = _build_overview_uncached()
+        except Exception:
+            # Continue serving the previous snapshot if a temporary
+            # Prometheus or Docker failure occurs.
+            if _overview_cache is not None:
+                return deepcopy(_overview_cache)
+            raise
+
+        _overview_cache = refreshed
+        _overview_cache_time = monotonic()
+
+        return deepcopy(_overview_cache)
+
+
+def clear_overview_cache():
+    global _overview_cache
+    global _overview_cache_time
+
+    with _overview_cache_lock:
+        _overview_cache = None
+        _overview_cache_time = 0.0
